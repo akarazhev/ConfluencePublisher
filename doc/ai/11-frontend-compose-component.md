@@ -70,7 +70,7 @@ Create the main Compose page component for creating pages, uploading attachments
 | onFiles(event)                  | Set files and initialize descriptions array       |
 | updateDescription(index, value) | Update description at index                       |
 | uploadAll()                     | Upload all files, add to attachments, clear files |
-| improvContent()                 | Call API, set suggestions                         |
+| improveContent()                | Call API, set suggestions                         |
 | createPage()                    | Call API, set pageId, show alert                  |
 | publishNow()                    | Call API, show status alert                       |
 | schedule()                      | Call API, set scheduleId, show alert              |

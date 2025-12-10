@@ -10,6 +10,13 @@ implementation.
 - **Frontend**: Angular 20, TypeScript, TailwindCSS
 - **Deployment**: Docker, Docker Compose, Nginx
 
+## Build and Runtime Requirements
+
+- The full application (backend and frontend) MUST be buildable and runnable on a host where only Docker and Docker
+  Compose are installed.
+- Local installations of Java, Gradle, Node.js, or Angular CLI MUST NOT be required to build or run the system; they may
+  be used optionally for local development, but containerized workflows are the primary supported path.
+
 ## Prompt Sequence
 
 Execute these prompts in order:

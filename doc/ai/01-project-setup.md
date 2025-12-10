@@ -16,6 +16,13 @@ Create the initial project structure and configuration for a full-stack web appl
 - **Database**: SQLite with Hibernate/JPA (using `hibernate-community-dialects`)
 - **Containerization**: Docker with multi-stage builds
 
+## Build and Runtime Requirements
+
+- The backend and frontend MUST be buildable and runnable using only Docker and Docker Compose.
+- Local installation of Java, Gradle, Node.js, or Angular CLI MUST NOT be required for building and running the
+  application; these tools may be used optionally for local development, but containerized workflows are the primary
+  supported path.
+
 ## Project Structure Requirements
 
 Create a monorepo with:

@@ -8,6 +8,13 @@ You are an expert DevOps engineer.
 
 Create Docker configuration for containerized deployment of the Confluence Publisher application.
 
+## Constraints
+
+- All backend and frontend builds MUST run inside the defined Docker images; the host environment MUST NOT require local
+  Java, Gradle, Node.js, or Angular CLI installations.
+- `docker compose up --build` MUST be sufficient to build all images and start the full application from a clean
+  checkout on a machine that has only Docker and Docker Compose installed.
+
 ## Files to Create
 
 ### 1. Backend Dockerfile (`backend/Dockerfile`)

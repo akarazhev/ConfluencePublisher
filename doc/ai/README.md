@@ -8,12 +8,12 @@ implementation.
 
 - **Backend**: Spring Boot 3.2, Java 21, JPA/Hibernate, SQLite
 - **Frontend**: Angular 20, TypeScript, TailwindCSS
-- **Deployment**: Docker, Docker Compose, Nginx
+- **Deployment**: Docker or Podman, Compose (e.g. `docker compose` / `podman compose`), Nginx
 
 ## Build and Runtime Requirements
 
-- The full application (backend and frontend) MUST be buildable and runnable on a host where only Docker and Docker
-  Compose are installed.
+- The full application (backend and frontend) MUST be buildable and runnable on a host where only Docker or Podman and
+  a Compose-compatible CLI (e.g. `docker compose` or `podman compose`) are installed.
 - Local installations of Java, Gradle, Node.js, or Angular CLI MUST NOT be required to build or run the system; they may
   be used optionally for local development, but containerized workflows are the primary supported path.
 
@@ -21,21 +21,21 @@ implementation.
 
 Execute these prompts in order:
 
-| #  | File                                                                                   | Description                          |
-|----|----------------------------------------------------------------------------------------|--------------------------------------|
-| 01 | [01-project-setup.md](01-project-setup.md)                                             | Project structure, Gradle/npm config |
-| 02 | [02-backend-entities-repositories.md](02-backend-entities-repositories.md)             | 5 JPA entities, 5 repositories       |
-| 03 | [03-backend-dtos.md](03-backend-dtos.md)                                               | Request/Response DTOs                |
-| 04 | [04-backend-configuration.md](04-backend-configuration.md)                             | Spring config classes                |
-| 05 | [05-backend-services.md](05-backend-services.md)                                       | Business logic services              |
-| 06 | [06-backend-providers.md](06-backend-providers.md)                                     | Confluence API providers             |
-| 07 | [07-backend-controllers.md](07-backend-controllers.md)                                 | REST controllers                     |
-| 08 | [08-backend-scheduler-exception-handler.md](08-backend-scheduler-exception-handler.md) | Scheduler, error handling            |
-| 09 | [09-frontend-setup-routing.md](09-frontend-setup-routing.md)                           | Angular setup, routing               |
-| 10 | [10-frontend-api-service.md](10-frontend-api-service.md)                               | HTTP API service                     |
-| 11 | [11-frontend-compose-component.md](11-frontend-compose-component.md)                   | Compose page                         |
-| 12 | [12-frontend-schedules-component.md](12-frontend-schedules-component.md)               | Schedules page                       |
-| 13 | [13-docker-deployment.md](13-docker-deployment.md)                                     | Docker configuration                 |
+| #  | File                                                                                   | Description                             |
+|----|----------------------------------------------------------------------------------------|-----------------------------------------|
+| 01 | [01-project-setup.md](01-project-setup.md)                                             | Project structure, Gradle/npm config    |
+| 02 | [02-backend-entities-repositories.md](02-backend-entities-repositories.md)             | 5 JPA entities, 5 repositories          |
+| 03 | [03-backend-dtos.md](03-backend-dtos.md)                                               | Request/Response DTOs                   |
+| 04 | [04-backend-configuration.md](04-backend-configuration.md)                             | Spring config classes                   |
+| 05 | [05-backend-services.md](05-backend-services.md)                                       | Business logic services                 |
+| 06 | [06-backend-providers.md](06-backend-providers.md)                                     | Confluence API providers                |
+| 07 | [07-backend-controllers.md](07-backend-controllers.md)                                 | REST controllers                        |
+| 08 | [08-backend-scheduler-exception-handler.md](08-backend-scheduler-exception-handler.md) | Scheduler, error handling               |
+| 09 | [09-frontend-setup-routing.md](09-frontend-setup-routing.md)                           | Angular setup, routing                  |
+| 10 | [10-frontend-api-service.md](10-frontend-api-service.md)                               | HTTP API service                        |
+| 11 | [11-frontend-compose-component.md](11-frontend-compose-component.md)                   | Compose page                            |
+| 12 | [12-frontend-schedules-component.md](12-frontend-schedules-component.md)               | Schedules page                          |
+| 13 | [13-docker-deployment.md](13-docker-deployment.md)                                     | Container (Docker/Podman) configuration |
 
 ## How to Use
 
@@ -77,7 +77,7 @@ Execute these prompts in order:
 
 ## Quick Start
 
-### Development
+### Development (optional local toolchain)
 
 ```bash
 # Backend
@@ -87,9 +87,13 @@ cd backend && ./gradlew bootRun
 cd frontend && npm install && npm start
 ```
 
-### Docker
+### Docker / Podman (containerized, recommended)
 
 ```bash
 cp .env.example .env
+# Docker
 docker compose up --build
+
+# or Podman
+podman compose up --build
 ```

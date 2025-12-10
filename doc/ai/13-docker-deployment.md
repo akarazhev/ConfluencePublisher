@@ -6,14 +6,15 @@ You are an expert DevOps engineer.
 
 ## Task
 
-Create Docker configuration for containerized deployment of the Confluence Publisher application.
+Create container configuration (Docker/Podman) for containerized deployment of the Confluence Publisher application.
 
 ## Constraints
 
-- All backend and frontend builds MUST run inside the defined Docker images; the host environment MUST NOT require local
-  Java, Gradle, Node.js, or Angular CLI installations.
-- `docker compose up --build` MUST be sufficient to build all images and start the full application from a clean
-  checkout on a machine that has only Docker and Docker Compose installed.
+- All backend and frontend builds MUST run inside the defined container images (Docker/Podman-compatible); the host
+  environment MUST NOT require local Java, Gradle, Node.js, or Angular CLI installations.
+- Running `docker compose up --build` or `podman compose up --build` MUST be sufficient to build all images and start
+  the full application from a clean checkout on a machine that has only Docker or Podman with a Compose-compatible CLI
+  installed.
 
 ## Files to Create
 
@@ -103,7 +104,11 @@ NG_APP_API_BASE=http://localhost:8080
 ```bash
 cp .env.example .env
 # Edit .env with credentials
+# Docker
 docker compose up --build
+
+# or Podman
+podman compose up --build
 ```
 
 **Access**:
@@ -114,8 +119,13 @@ docker compose up --build
 **Stop**:
 
 ```bash
+# Docker
 docker compose down      # Stop containers
 docker compose down -v   # Also remove volumes
+
+# or Podman
+podman compose down      # Stop containers
+podman compose down -v   # Also remove volumes
 ```
 
 ## Verification Criteria

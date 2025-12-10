@@ -14,11 +14,12 @@ Create the initial project structure and configuration for a full-stack web appl
 - **Backend**: Spring Boot 3.2, Java 21, Gradle (Kotlin DSL)
 - **Frontend**: Angular 20, TypeScript, TailwindCSS
 - **Database**: SQLite with Hibernate/JPA (using `hibernate-community-dialects`)
-- **Containerization**: Docker with multi-stage builds
+- **Containerization**: Docker or Podman with multi-stage builds
 
 ## Build and Runtime Requirements
 
-- The backend and frontend MUST be buildable and runnable using only Docker and Docker Compose.
+- The backend and frontend MUST be buildable and runnable using only Docker or Podman together with a Compose-compatible
+  CLI (e.g. `docker compose` or `podman compose`).
 - Local installation of Java, Gradle, Node.js, or Angular CLI MUST NOT be required for building and running the
   application; these tools may be used optionally for local development, but containerized workflows are the primary
   supported path.

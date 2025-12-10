@@ -1,12 +1,16 @@
 # Prompt 01: Project Setup and Configuration
 
 ## Role
+
 You are an expert Java engineer and expert front-end engineer.
 
 ## Task
-Create the initial project structure and configuration for a full-stack web application called **"Confluence Publisher"** - a tool for creating, scheduling, and publishing pages to Atlassian Confluence.
+
+Create the initial project structure and configuration for a full-stack web application called **"Confluence Publisher"
+** - a tool for creating, scheduling, and publishing pages to Atlassian Confluence.
 
 ## Technology Stack
+
 - **Backend**: Spring Boot 3.2, Java 21, Gradle (Kotlin DSL)
 - **Frontend**: Angular 20, TypeScript, TailwindCSS
 - **Database**: SQLite with Hibernate/JPA (using `hibernate-community-dialects`)
@@ -15,8 +19,9 @@ Create the initial project structure and configuration for a full-stack web appl
 ## Project Structure Requirements
 
 Create a monorepo with:
+
 - `backend/` - Spring Boot application
-- `frontend/` - Angular application  
+- `frontend/` - Angular application
 - `data/` - SQLite database directory (gitignored)
 - `storage/attachments/` - File upload directory (gitignored)
 - Root-level Docker Compose and environment files
@@ -27,12 +32,12 @@ Create a monorepo with:
 2. **SQLite database** using `org.xerial:sqlite-jdbc` and `hibernate-community-dialects`
 3. **Lombok** for boilerplate reduction
 4. **application.yml** with configurable properties:
-   - Database URL (default: `jdbc:sqlite:./data/app.db`)
-   - Attachment directory (default: `storage/attachments`)
-   - Confluence URL, username, API token, default space (all from environment variables)
-   - CORS origins list (localhost:4200, 8080, 5173)
-   - Provider type (confluence-server or confluence-stub)
-   - Scheduler interval in seconds
+    - Database URL (default: `jdbc:sqlite:./data/app.db`)
+    - Attachment directory (default: `storage/attachments`)
+    - Confluence URL, username, API token, default space (all from environment variables)
+    - CORS origins list (localhost:4200, 8080, 5173)
+    - Provider type (confluence-server or confluence-stub)
+    - Scheduler interval in seconds
 5. **Multipart upload** support up to 50MB
 6. **Actuator** health endpoint exposed
 
@@ -56,6 +61,7 @@ Create a monorepo with:
 - `.gitignore` - Ignore data/, node_modules/, build artifacts
 
 ## Verification Criteria
+
 - Backend compiles and starts with `./gradlew bootRun` on port 8080
 - Frontend installs and starts with `npm install && npm start` on port 4200
 - No compilation errors in either project

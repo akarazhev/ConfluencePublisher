@@ -1,9 +1,11 @@
 # Prompt 13: Docker Deployment Configuration
 
 ## Role
+
 You are an expert DevOps engineer.
 
 ## Task
+
 Create Docker configuration for containerized deployment of the Confluence Publisher application.
 
 ## Files to Create
@@ -11,6 +13,7 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 ### 1. Backend Dockerfile (`backend/Dockerfile`)
 
 **Build Stage**:
+
 - Base: `gradle:8.5-jdk21`
 - Copy Gradle files first (for dependency caching)
 - Run `gradle dependencies`
@@ -18,6 +21,7 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 - Build with `gradle build -x test`
 
 **Runtime Stage**:
+
 - Base: `eclipse-temurin:21-jre-alpine`
 - Create directories: /data, /storage/attachments
 - Copy JAR from build stage
@@ -28,6 +32,7 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 ### 2. Frontend Dockerfile (`frontend/Dockerfile`)
 
 **Build Stage**:
+
 - Base: `node:20-alpine`
 - Accept build arg `NG_APP_API_BASE`
 - Install dependencies
@@ -35,12 +40,14 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 - Run `npm run build`
 
 **Runtime Stage**:
+
 - Base: `nginx:alpine`
 - Copy nginx.conf
 - Copy built files from dist folder
 - Expose port 80
 
 ### 3. Nginx Configuration (`frontend/nginx.conf`)
+
 - Listen on port 80
 - Serve static files from /usr/share/nginx/html
 - Use try_files for SPA routing (fallback to index.html)
@@ -48,6 +55,7 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 ### 4. Docker Compose (`docker-compose.yml`)
 
 **Backend Service**:
+
 - Build from backend/Dockerfile
 - Port: 8080:8080
 - Load .env file
@@ -57,16 +65,19 @@ Create Docker configuration for containerized deployment of the Confluence Publi
 - Restart: unless-stopped
 
 **Frontend Service**:
+
 - Build from frontend/Dockerfile with NG_APP_API_BASE arg
 - Port: 4200:80
 - Depends on backend (healthy)
 - Restart: unless-stopped
 
 **Volumes**:
+
 - data: for SQLite database
 - attachments: for uploaded files
 
 ### 5. Environment Example (`.env.example`)
+
 ```
 CONFLUENCE_URL=https://your-domain.atlassian.net/confluence
 CONFLUENCE_USERNAME=your-username
@@ -81,6 +92,7 @@ NG_APP_API_BASE=http://localhost:8080
 ## Deployment Commands
 
 **Build and Run**:
+
 ```bash
 cp .env.example .env
 # Edit .env with credentials
@@ -88,16 +100,19 @@ docker compose up --build
 ```
 
 **Access**:
+
 - Frontend: http://localhost:4200
 - Backend: http://localhost:8080/api/health
 
 **Stop**:
+
 ```bash
 docker compose down      # Stop containers
 docker compose down -v   # Also remove volumes
 ```
 
 ## Verification Criteria
+
 - Both images build successfully
 - Backend passes health check
 - Frontend serves Angular app

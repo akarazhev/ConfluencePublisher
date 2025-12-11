@@ -55,17 +55,18 @@ Execute these prompts in order:
 
 ## API Endpoints
 
-| Method | Endpoint                | Description            |
-|--------|-------------------------|------------------------|
-| GET    | /api/health             | Health check           |
-| GET    | /api/config             | Frontend configuration |
-| POST   | /api/pages              | Create page            |
-| GET    | /api/pages/{id}         | Get page               |
-| POST   | /api/attachments        | Upload file            |
-| POST   | /api/schedules          | Create schedule        |
-| GET    | /api/schedules          | List schedules         |
-| POST   | /api/confluence/publish | Publish immediately    |
-| POST   | /api/ai/improve-content | Content suggestions    |
+| Method | Endpoint                     | Description                     |
+|--------|------------------------------|---------------------------------|
+| GET    | /api/health                  | Health check                    |
+| GET    | /api/config                  | Frontend configuration          |
+| POST   | /api/pages                   | Create page                     |
+| GET    | /api/pages/{id}              | Get page                        |
+| POST   | /api/attachments             | Upload file                     |
+| POST   | /api/schedules               | Create schedule                 |
+| GET    | /api/schedules               | List schedules                  |
+| POST   | /api/confluence/publish      | Publish immediately             |
+| POST   | /api/ai/improve-content      | Content suggestions             |
+| POST   | /api/ai/generate-description | Generate attachment description |
 
 ## Database Tables
 

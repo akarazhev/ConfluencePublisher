@@ -61,10 +61,17 @@ Create a monorepo with:
 - `backend/build.gradle.kts` - Gradle build with all dependencies
 - `backend/settings.gradle.kts` - Project name
 - `backend/src/main/resources/application.yml` - Spring configuration
+- `backend/src/main/java/com/confluence/publisher/ConfluencePublisherApplication.java` - Main application class (
+  placeholder)
 - `frontend/package.json` - npm dependencies
 - `frontend/angular.json` - Angular CLI configuration
 - `frontend/tailwind.config.js` - TailwindCSS setup
 - `frontend/tsconfig.json` - TypeScript configuration
+- `frontend/src/main.ts` - Angular bootstrap entry point
+- `frontend/src/index.html` - HTML template
+- `frontend/src/styles.css` - Global styles with Tailwind imports
+- `frontend/src/environments/environment.ts` - Development environment
+- `frontend/src/environments/environment.prod.ts` - Production environment
 - `.env.example` - Environment variable template
 - `.gitignore` - Ignore data/, node_modules/, build artifacts
 

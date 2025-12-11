@@ -48,26 +48,31 @@ Create the Schedules page component that displays all publication schedules with
 
 **Data Table**:
 
-- Columns: ID, Page ID, Status, Scheduled, Attempts
+- Columns: ID, Page ID, Status, Scheduled, Attempts, Error
+- Status column with color coding: green for "posted", yellow for "queued", red for "failed"
+- Error column shows lastError (truncated if long, with tooltip for full text)
 - Alternating row colors using `$even`
 - Horizontal scroll on overflow
 
 ## Methods
 
-| Method                 | Description                           |
-|------------------------|---------------------------------------|
-| load()                 | Fetch schedules from API, update rows |
-| formatDate(dateString) | Convert ISO string to localized date  |
+| Method                 | Description                                   |
+|------------------------|-----------------------------------------------|
+| load()                 | Fetch schedules from API, update rows         |
+| formatDate(dateString) | Convert ISO string to localized date          |
+| getStatusClass(status) | Return TailwindCSS classes for status badge   |
+| truncateError(error)   | Truncate error message to 30 chars with "..." |
 
 ## Table Layout
 
 ```
-┌────┬─────────┬────────┬─────────────────┬──────────┐
-│ ID │ Page ID │ Status │ Scheduled       │ Attempts │
-├────┼─────────┼────────┼─────────────────┼──────────┤
-│ 1  │ 5       │ posted │ 12/8/24, 3:00PM │ 1        │
-│ 2  │ 6       │ queued │ 12/8/24, 4:00PM │ 0        │
-└────┴─────────┴────────┴─────────────────┴──────────┘
+┌────┬─────────┬────────┬─────────────────┬──────────┬─────────────────┐
+│ ID │ Page ID │ Status │ Scheduled       │ Attempts │ Error           │
+├────┼─────────┼────────┼─────────────────┼──────────┼─────────────────┤
+│ 1  │ 5       │ posted │ 12/8/24, 3:00PM │ 1        │ -               │
+│ 2  │ 6       │ failed │ 12/8/24, 4:00PM │ 3        │ Connection err… │
+│ 3  │ 7       │ queued │ 12/8/24, 5:00PM │ 0        │ -               │
+└────┴─────────┴────────┴─────────────────┴──────────┴─────────────────┘
 ```
 
 ## Styling (TailwindCSS)
@@ -77,6 +82,9 @@ Create the Schedules page component that displays all publication schedules with
 - Alternating row backgrounds
 - Padding on cells
 - Border bottom on cells
+- Status badges: `bg-green-100 text-green-800` for posted, `bg-yellow-100 text-yellow-800` for queued,
+  `bg-red-100 text-red-800` for failed
+- Error text in `text-red-600` with `truncate` class and `title` attribute for tooltip
 
 ## Status Values
 

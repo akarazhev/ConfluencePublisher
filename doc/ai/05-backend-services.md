@@ -79,6 +79,21 @@ Create the service layer with business logic for the Confluence Publisher applic
     - Create and save PublishLog with result
     - Return the publish log
 
+### 5. AiService
+
+**Dependencies**: None (stub implementation)
+
+**Methods**:
+
+- `improveContent(content)` → List<String>
+    - Return stub suggestions: original content, truncated version (first 100 chars + "..."), uppercase version
+    - This is a placeholder for future AI integration
+
+- `generateDescription(description)` → String
+    - If description is null or blank, return "No description provided"
+    - Otherwise return sanitized/truncated description (max 200 chars)
+    - This is a placeholder for future AI integration
+
 ## Design Guidelines
 
 - Use `@Service` and `@RequiredArgsConstructor`

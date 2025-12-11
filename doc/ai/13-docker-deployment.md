@@ -18,7 +18,17 @@ Create container configuration (Docker/Podman) for containerized deployment of t
 
 ## Files to Create
 
-### 1. Backend Dockerfile (`backend/Dockerfile`)
+### 1. Backend .dockerignore (`backend/.dockerignore`)
+
+```
+build/
+.gradle/
+*.log
+*.iml
+.idea/
+```
+
+### 2. Backend Dockerfile (`backend/Dockerfile`)
 
 **Build Stage**:
 
@@ -37,14 +47,24 @@ Create container configuration (Docker/Podman) for containerized deployment of t
 - Expose port 8080
 - Entrypoint: `java -jar app.jar`
 
-### 2. Frontend Dockerfile (`frontend/Dockerfile`)
+### 3. Frontend .dockerignore (`frontend/.dockerignore`)
+
+```
+node_modules/
+dist/
+.angular/
+*.log
+```
+
+### 4. Frontend Dockerfile (`frontend/Dockerfile`)
 
 **Build Stage**:
 
 - Base: `node:20-alpine`
 - Accept build arg `NG_APP_API_BASE`
 - Install dependencies
-- Replace apiBase in environment.prod.ts using sed
+- Use Angular's `fileReplacements` in `angular.json` for production builds (already configured)
+- Alternatively, use `sed` to replace apiBase in environment.prod.ts if needed
 - Run `npm run build`
 
 **Runtime Stage**:
@@ -54,13 +74,13 @@ Create container configuration (Docker/Podman) for containerized deployment of t
 - Copy built files from dist folder
 - Expose port 80
 
-### 3. Nginx Configuration (`frontend/nginx.conf`)
+### 5. Nginx Configuration (`frontend/nginx.conf`)
 
 - Listen on port 80
 - Serve static files from /usr/share/nginx/html
 - Use try_files for SPA routing (fallback to index.html)
 
-### 4. Docker Compose (`docker-compose.yml`)
+### 6. Docker Compose (`docker-compose.yml`)
 
 **Backend Service**:
 
@@ -84,7 +104,7 @@ Create container configuration (Docker/Podman) for containerized deployment of t
 - data: for SQLite database
 - attachments: for uploaded files
 
-### 5. Environment Example (`.env.example`)
+### 7. Environment Example (`.env.example`)
 
 ```
 CONFLUENCE_URL=https://your-domain.atlassian.net/confluence

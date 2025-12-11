@@ -14,13 +14,14 @@ Create the Angular service that handles all HTTP communication with the backend 
 
 ## TypeScript Interfaces to Define
 
-| Interface                  | Fields                                                                                |
-|----------------------------|---------------------------------------------------------------------------------------|
-| Attachment                 | id: number, filename: string, description?: string                                    |
-| Schedule                   | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number |
-| ContentImprovementResponse | suggestions: string[]                                                                 |
-| PageResponse               | id: number, title: string                                                             |
-| PublishResponse            | status: string                                                                        |
+| Interface                     | Fields                                                                                                          |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Attachment                    | id: number, filename: string, description?: string                                                              |
+| Schedule                      | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number, lastError?: string       |
+| ContentImprovementResponse    | suggestions: string[]                                                                                           |
+| AttachmentDescriptionResponse | description: string                                                                                             |
+| PageResponse                  | id: number, title: string, content: string, spaceKey: string, parentPageId?: number, attachments?: Attachment[] |
+| PublishResponse               | logId?: number, status: string, confluencePageId?: string                                                       |
 
 ## ApiService Class
 
@@ -36,15 +37,16 @@ Create the Angular service that handles all HTTP communication with the backend 
 
 ## API Methods
 
-| Method           | HTTP | Endpoint            | Parameters                                             | Returns                                |
-|------------------|------|---------------------|--------------------------------------------------------|----------------------------------------|
-| uploadAttachment | POST | /attachments        | File, description?                                     | Observable<Attachment>                 |
-| improveContent   | POST | /ai/improve-content | content: string                                        | Observable<ContentImprovementResponse> |
-| createPage       | POST | /pages              | title, content, spaceKey, attachmentIds, parentPageId? | Observable<PageResponse>               |
-| publishNow       | POST | /confluence/publish | pageId: number                                         | Observable<PublishResponse>            |
-| schedulePage     | POST | /schedules          | pageId: number                                         | Observable<Schedule>                   |
-| getSchedules     | GET  | /schedules          | -                                                      | Observable<Schedule[]>                 |
-| getConfig        | GET  | /config             | -                                                      | Observable<{defaultSpace: string}>     |
+| Method              | HTTP | Endpoint                 | Parameters                                             | Returns                                   |
+|---------------------|------|--------------------------|--------------------------------------------------------|-------------------------------------------|
+| uploadAttachment    | POST | /attachments             | File, description?                                     | Observable<Attachment>                    |
+| improveContent      | POST | /ai/improve-content      | content: string                                        | Observable<ContentImprovementResponse>    |
+| createPage          | POST | /pages                   | title, content, spaceKey, attachmentIds, parentPageId? | Observable<PageResponse>                  |
+| publishNow          | POST | /confluence/publish      | pageId: number                                         | Observable<PublishResponse>               |
+| schedulePage        | POST | /schedules               | pageId: number                                         | Observable<Schedule>                      |
+| getSchedules        | GET  | /schedules               | -                                                      | Observable<Schedule[]>                    |
+| getConfig           | GET  | /config                  | -                                                      | Observable<{defaultSpace: string}>        |
+| generateDescription | POST | /ai/generate-description | description?: string                                   | Observable<AttachmentDescriptionResponse> |
 
 ## Implementation Notes
 

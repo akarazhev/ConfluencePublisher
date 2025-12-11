@@ -103,6 +103,18 @@ Include nested static class `AttachmentInfo` with: id, filename, description
 |-------------|--------|
 | description | String |
 
+### ConfigResponse
+
+| Field        | Type   |
+|--------------|--------|
+| defaultSpace | String |
+
+### HealthResponse
+
+| Field  | Type   |
+|--------|--------|
+| status | String |
+
 ## Design Guidelines
 
 - Request DTOs: Use `@Data` from Lombok, Jakarta Validation annotations

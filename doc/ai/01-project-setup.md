@@ -14,7 +14,15 @@ Create the initial project structure and configuration for a full-stack web appl
 - **Backend**: Spring Boot 3.2, Java 21, Gradle (Kotlin DSL)
 - **Frontend**: Angular 20, TypeScript, TailwindCSS
 - **Database**: SQLite with Hibernate/JPA (using `hibernate-community-dialects`)
-- **Containerization**: Docker with multi-stage builds
+- **Containerization**: Docker or Podman with multi-stage builds
+
+## Build and Runtime Requirements
+
+- The backend and frontend MUST be buildable and runnable using only Docker or Podman together with a Compose-compatible
+  CLI (e.g. `docker compose` or `podman compose`).
+- Local installation of Java, Gradle, Node.js, or Angular CLI MUST NOT be required for building and running the
+  application; these tools may be used optionally for local development, but containerized workflows are the primary
+  supported path.
 
 ## Project Structure Requirements
 
@@ -53,10 +61,17 @@ Create a monorepo with:
 - `backend/build.gradle.kts` - Gradle build with all dependencies
 - `backend/settings.gradle.kts` - Project name
 - `backend/src/main/resources/application.yml` - Spring configuration
+- `backend/src/main/java/com/confluence/publisher/ConfluencePublisherApplication.java` - Main application class (
+  placeholder)
 - `frontend/package.json` - npm dependencies
 - `frontend/angular.json` - Angular CLI configuration
 - `frontend/tailwind.config.js` - TailwindCSS setup
 - `frontend/tsconfig.json` - TypeScript configuration
+- `frontend/src/main.ts` - Angular bootstrap entry point
+- `frontend/src/index.html` - HTML template
+- `frontend/src/styles.css` - Global styles with Tailwind imports
+- `frontend/src/environments/environment.ts` - Development environment
+- `frontend/src/environments/environment.prod.ts` - Production environment
 - `.env.example` - Environment variable template
 - `.gitignore` - Ignore data/, node_modules/, build artifacts
 

@@ -26,6 +26,7 @@ Create the main Compose page component for creating pages, uploading attachments
 | title        | string         | ''      |
 | content      | string         | ''      |
 | spaceKey     | string         | ''      |
+| parentPageId | string         | ''      |
 | files        | File[]         | []      |
 | descriptions | string[]       | []      |
 | attachments  | Attachment[]   | []      |
@@ -48,6 +49,7 @@ Create the main Compose page component for creating pages, uploading attachments
 
 - Title input field
 - Space key input field (optional)
+- Parent page ID input field (optional, numeric)
 - Content textarea (8 rows)
 - Action buttons:
     - "Improve content" (disabled if no content or busy)
@@ -65,15 +67,15 @@ Create the main Compose page component for creating pages, uploading attachments
 
 ## Methods
 
-| Method                          | Description                                       |
-|---------------------------------|---------------------------------------------------|
-| onFiles(event)                  | Set files and initialize descriptions array       |
-| updateDescription(index, value) | Update description at index                       |
-| uploadAll()                     | Upload all files, add to attachments, clear files |
-| improvContent()                 | Call API, set suggestions                         |
-| createPage()                    | Call API, set pageId, show alert                  |
-| publishNow()                    | Call API, show status alert                       |
-| schedule()                      | Call API, set scheduleId, show alert              |
+| Method                          | Description                                                      |
+|---------------------------------|------------------------------------------------------------------|
+| onFiles(event)                  | Set files and initialize descriptions array                      |
+| updateDescription(index, value) | Update description at index                                      |
+| uploadAll()                     | Upload all files, add to attachments, clear files                |
+| improveContent()                | Call API, set suggestions                                        |
+| createPage()                    | Call API with parentPageId (if provided), set pageId, show alert |
+| publishNow()                    | Call API, show status alert                                      |
+| schedule()                      | Call API, set scheduleId, show alert                             |
 
 ## Async Pattern
 

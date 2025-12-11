@@ -65,7 +65,8 @@ Implements `CommandLineRunner` to:
 
 - `@SpringBootApplication`
 - `@EnableScheduling` for background job support
-- `@EnableConfigurationProperties(AppProperties.class)`
+- `@EnableConfigurationProperties(AppProperties.class)` (this registers an `AppProperties` bean with the default name
+  `appProperties`, which can be referenced from `@Scheduled` SpEL expressions)
 
 ## Configuration Properties Mapping
 

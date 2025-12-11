@@ -46,6 +46,8 @@ Use `@RestControllerAdvice` to handle exceptions globally.
 - Log all exceptions
 - Extract field errors from validation exceptions
 - Don't expose internal details for generic exceptions
+- Assume not-found cases throw `RuntimeException` messages containing the phrase "not found" (for example, "Page not
+  found: 123" or "Schedule not found: 5") so they can be mapped to 404
 
 ## Scheduler Flow
 

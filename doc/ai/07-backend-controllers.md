@@ -57,6 +57,8 @@ Base path: `/api/schedules`
 | GET    | `/`             | -                     | List<ScheduleResponse>         |
 
 Include private helper method `toResponse(Schedule)` to convert entity to DTO.
+For the list endpoint, call `ScheduleService.listSchedules(50)` to return the 50 most recent schedules ordered by ID
+descending.
 
 ### 5. ConfluenceController
 

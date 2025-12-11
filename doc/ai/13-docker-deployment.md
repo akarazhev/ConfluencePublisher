@@ -87,8 +87,8 @@ dist/
 - Build from backend/Dockerfile
 - Port: 8080:8080
 - Load .env file
-- Environment variables for Confluence config
-- Named volumes for data and attachments
+- Environment variables for Confluence config and application paths (for example, APP_DATABASE_URL, APP_ATTACHMENT_DIR)
+- Named volumes for data and attachments, mounted as `data:/data` and `attachments:/storage/attachments`
 - Health check: GET /api/health
 - Restart: unless-stopped
 
@@ -113,6 +113,8 @@ CONFLUENCE_API_TOKEN=your-api-token
 CONFLUENCE_DEFAULT_SPACE=YOUR_SPACE_KEY
 CONFLUENCE_PROVIDER=confluence-server
 SCHEDULER_INTERVAL_SECONDS=5
+APP_DATABASE_URL=jdbc:sqlite:/data/app.db
+APP_ATTACHMENT_DIR=/storage/attachments
 CORS_ORIGINS=http://localhost:4200,http://localhost:8080
 NG_APP_API_BASE=http://localhost:8080
 ```

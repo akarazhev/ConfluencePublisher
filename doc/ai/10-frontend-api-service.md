@@ -14,14 +14,14 @@ Create the Angular service that handles all HTTP communication with the backend 
 
 ## TypeScript Interfaces to Define
 
-| Interface                     | Fields                                                                                                    |
-|-------------------------------|-----------------------------------------------------------------------------------------------------------|
-| Attachment                    | id: number, filename: string, description?: string                                                        |
-| Schedule                      | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number, lastError?: string |
-| ContentImprovementResponse    | suggestions: string[]                                                                                     |
-| AttachmentDescriptionResponse | description: string                                                                                       |
-| PageResponse                  | id: number, title: string, content: string, spaceKey: string, parentPageId?: number                       |
-| PublishResponse               | status: string, confluencePageId?: string                                                                 |
+| Interface                     | Fields                                                                                                          |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Attachment                    | id: number, filename: string, description?: string                                                              |
+| Schedule                      | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number, lastError?: string       |
+| ContentImprovementResponse    | suggestions: string[]                                                                                           |
+| AttachmentDescriptionResponse | description: string                                                                                             |
+| PageResponse                  | id: number, title: string, content: string, spaceKey: string, parentPageId?: number, attachments?: Attachment[] |
+| PublishResponse               | logId?: number, status: string, confluencePageId?: string                                                       |
 
 ## ApiService Class
 

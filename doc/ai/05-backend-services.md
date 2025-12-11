@@ -57,7 +57,8 @@ Create the service layer with business logic for the Confluence Publisher applic
     - Find by ID or throw "Schedule not found"
 
 - `listSchedules(limit)` → List<Schedule>
-    - Return schedules sorted by ID descending with pagination
+    - Return the latest schedules sorted by ID descending, limited by the provided `limit` (for example, 50 for the list
+      endpoint)
 
 - `findQueuedSchedules(now)` → List<Schedule>
     - Find schedules with status "queued" and scheduledAt <= now
@@ -99,7 +100,8 @@ Create the service layer with business logic for the Confluence Publisher applic
 - Use `@Service` and `@RequiredArgsConstructor`
 - Use `@Transactional` for write operations
 - Use `@Transactional(readOnly = true)` for read operations
-- Throw `RuntimeException` with descriptive messages for not-found cases
+- Throw `RuntimeException` with messages that include the phrase "not found" for missing resources (for example, "Page
+  not found: " + id or "Schedule not found: " + id) so the global exception handler can map them to 404
 - Use Lombok `@Slf4j` for logging
 
 ## Verification Criteria

@@ -1,5 +1,42 @@
 # Confluence Publisher - AI Generation Prompts
 
+## Prompt Usage Guide
+
+- **Recommended models**: Use a modern, code-capable LLM with strong Java, Spring Boot, TypeScript, and Angular support
+  (for example, GPT-4-level or later models, or an equivalent code-focused model).
+- **Temperature**: 0.0–0.3 for repeatable, deterministic code generation. Prefer lower values (0.0–0.1) when you want
+  the model to strictly follow these prompts and avoid creative deviations.
+- **How to feed prompts**:
+    - Provide **one prompt file at a time**, in numerical order (01 → 13).
+    - Paste the **entire markdown content** of the prompt into the chat.
+    - Instruct the model to **modify or create files in-place** in the existing repository to satisfy the prompt,
+      without changing behavior defined by earlier prompts unless strictly necessary.
+- **Framing suggestion** (you can adapt this when sending each prompt):
+    - “You are acting as my pair programmer. Using the current codebase plus the following prompt, update or add code so
+      that all requirements in this prompt are met. Keep the implementation simple and explicit. Do not introduce new
+      features beyond what this prompt requires.”
+- **Workflow**:
+    - After each prompt, run builds/tests (Gradle for backend, npm/Angular for frontend, or Docker/Compose) and fix any
+      issues **before** moving to the next prompt.
+
+### Example Conversation (Prompt 01)
+
+```text
+User: You are acting as my pair programmer. Using the existing codebase in this repository and the prompt below, update
+the project so that all requirements are met. Keep the implementation simple and explicit. Do not introduce new
+features beyond what this prompt requires.
+
+Here is Prompt 01 (Project Setup and Configuration):
+
+[paste full contents of 01-project-setup.md here]
+
+Assistant: Understood. I will:
+1) Create or update the backend Gradle project, application.yml, and main class.
+2) Create or update the Angular frontend project with Tailwind and strict TypeScript config.
+3) Ensure the project structure, defaults, and Docker/Compose expectations are satisfied.
+Then I’ll summarize the changes and any follow-up steps.
+```
+
 This directory contains **13 detailed prompts** for AI to generate a complete full-stack web application called "
 Confluence Publisher". Each prompt describes requirements without providing source code, allowing AI to generate the
 implementation.
@@ -64,17 +101,18 @@ Execute these prompts in order:
 | POST   | /api/attachments             | Upload file                     |
 | POST   | /api/schedules               | Create schedule                 |
 | GET    | /api/schedules               | List schedules                  |
+| GET    | /api/schedules/{id}          | Get schedule                    |
 | POST   | /api/confluence/publish      | Publish immediately             |
 | POST   | /api/ai/improve-content      | Content suggestions             |
 | POST   | /api/ai/generate-description | Generate attachment description |
 
 ## Database Tables
 
-- **page**: id, title, content, spaceKey, parentPageId, timestamps
+- **page**: id, title, content, spaceKey, parentPageId, authorId, timestamps
 - **attachment**: id, filename, contentType, size, storagePath, description
 - **pageattachment**: id, pageId, attachmentId, position
 - **schedule**: id, pageId, scheduledAt, status, attemptCount, lastError
-- **publishlog**: id, pageId, provider, confluencePageId, status, message, createdAt
+- **publishlog**: id, pageId, provider, spaceKey, confluencePageId, status, message, createdAt
 
 ## Quick Start
 

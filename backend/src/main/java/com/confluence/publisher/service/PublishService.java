@@ -4,8 +4,8 @@ import com.confluence.publisher.entity.Attachment;
 import com.confluence.publisher.entity.Page;
 import com.confluence.publisher.entity.PageAttachment;
 import com.confluence.publisher.entity.PublishLog;
+import com.confluence.publisher.provider.BaseProvider;
 import com.confluence.publisher.provider.ProviderFactory;
-import com.confluence.publisher.provider.PublishProvider;
 import com.confluence.publisher.repository.AttachmentRepository;
 import com.confluence.publisher.repository.PageAttachmentRepository;
 import com.confluence.publisher.repository.PageRepository;
@@ -51,16 +51,18 @@ public class PublishService {
             log.debug("Found {} attachments for page {}", attachmentPaths.size(), pageId);
             
             // Get provider from ProviderFactory
-            PublishProvider provider = providerFactory.getProvider();
+            BaseProvider provider = providerFactory.getProvider();
             
             // Call provider.publishPage() with page data
-            String confluencePageId = provider.publishPage(
+            BaseProvider.ProviderResult result = provider.publishPage(
+                    page.getSpaceKey(),
                     page.getTitle(),
                     page.getContent(),
-                    page.getSpaceKey(),
-                    page.getParentPageId(),
+                    page.getParentPageId() != null ? page.getParentPageId().toString() : null,
                     attachmentPaths
             );
+            
+            String confluencePageId = result.confluencePageId();
             
             log.info("Page {} published successfully with Confluence page ID: {}", pageId, confluencePageId);
             

@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 06: Backend Confluence Providers
+Here is Prompt 07: Backend REST Controllers
 
 ## Role
 
@@ -14,104 +14,112 @@ You are an expert Java engineer.
 
 ## Task
 
-Create the provider pattern for Confluence API integration with a stub for testing and a real server provider.
+Create REST controllers that expose the API endpoints for the Confluence Publisher application.
 
-## Package Structure
+## Package
 
-- `com.confluence.publisher.provider` - Provider classes
-- `com.confluence.publisher.provider.dto` - Confluence API DTOs
+`com.confluence.publisher.controller`
 
-## Components to Create
+## Controllers to Create
 
-### 1. BaseProvider Interface
+### 1. HealthController
 
-Define an interface with:
+Base path: `/api`
 
-- `publishPage(spaceKey, title, content, parentPageId, attachmentPaths)` → ProviderResult
-- `getStatus(confluencePageId)` → String
-- Inner record `ProviderResult(String confluencePageId, String message)`
+| Method | Path      | Description                                     |
+|--------|-----------|-------------------------------------------------|
+| GET    | `/health` | Return `{"status": "ok"}`                       |
+| GET    | `/config` | Return `{"defaultSpace": <from AppProperties>}` |
 
-### 2. ConfluenceStubProvider
+### 2. PageController
 
-A stub implementation for testing:
+Base path: `/api/pages`
 
-- Generate fake page ID like "CONF-" + random UUID substring
-- Log the operation details
-- Return success result without making real API calls
+| Method | Path        | Request           | Response                   |
+|--------|-------------|-------------------|----------------------------|
+| POST   | `/`         | PageCreateRequest | PageResponse (201 Created) |
+| GET    | `/{pageId}` | -                 | PageResponse               |
 
-### 3. ProviderFactory
+**POST logic**:
 
-Factory to select provider based on configuration:
+- Use default space from AppProperties if spaceKey not provided
+- Call PageService.createPage()
+- Return created page info
 
-- Inject AppProperties, ConfluenceStubProvider, ConfluenceServerProvider
-- `getProvider()` method returns provider based on `app.provider` config:
-    - "confluence-server" or "server" → ConfluenceServerProvider
-    - "confluence-stub" or "stub" → ConfluenceStubProvider
-    - Unknown → fallback to stub with warning
-- `getProviderName()` returns configured provider name
+### 3. AttachmentController
 
-### 4. Confluence API DTOs
+Base path: `/api/attachments`
 
-**ConfluencePageRequest** (for creating/updating pages):
+| Method | Path | Request                                      | Response                               |
+|--------|------|----------------------------------------------|----------------------------------------|
+| POST   | `/`  | MultipartFile "file", optional "description" | AttachmentUploadResponse (201 Created) |
 
-- type, title, space (nested: key), body (nested: storage with value and representation)
-- ancestors (list of id), version (nested: number)
-- Use `@JsonInclude(NON_NULL)` to omit null fields
+### 4. ScheduleController
 
-**ConfluencePageResponse** (API response):
+Base path: `/api/schedules`
 
-- id, type, status, title, space, version, _links (webui, self)
-- Use `@JsonIgnoreProperties(ignoreUnknown = true)`
+| Method | Path            | Request               | Response                       |
+|--------|-----------------|-----------------------|--------------------------------|
+| POST   | `/`             | ScheduleCreateRequest | ScheduleResponse (201 Created) |
+| GET    | `/{scheduleId}` | -                     | ScheduleResponse               |
+| GET    | `/`             | -                     | List<ScheduleResponse>         |
 
-**ConfluenceSearchResponse**:
+Include private helper method `toResponse(Schedule)` to convert entity to DTO.
+For the list endpoint, call `ScheduleService.listSchedules(50)` to return the 50 most recent schedules ordered by ID
+descending.
 
-- results (List<ConfluencePageResponse>), start, limit, size
+### 5. ConfluenceController
 
-### 5. ConfluenceServerProvider
+Base path: `/api/confluence`
 
-Real Confluence integration using Spring's RestClient:
+| Method | Path       | Request                  | Response        |
+|--------|------------|--------------------------|-----------------|
+| POST   | `/publish` | ConfluencePublishRequest | PublishResponse |
 
-**RestClient Setup**:
+Call PublishService.publishPage() and return result.
 
-- Lazy initialization with double-checked locking
-- Base URL from AppProperties (remove trailing slash)
-- Authentication: Bearer token if API token > 30 chars, otherwise Basic auth
-- Default headers: Authorization, Content-Type, Accept
+### 6. AiController
 
-**publishPage Method**:
+Base path: `/api/ai`
 
-1. Search for existing page by title in space
-2. If exists → update page (increment version number)
-3. If not exists → create new page
-4. Upload attachments if any
-5. Return ProviderResult with page ID and web URL
+| Method | Path                    | Request                      | Response                      |
+|--------|-------------------------|------------------------------|-------------------------------|
+| POST   | `/improve-content`      | ContentImprovementRequest    | ContentImprovementResponse    |
+| POST   | `/generate-description` | AttachmentDescriptionRequest | AttachmentDescriptionResponse |
 
-**Helper Methods**:
+**Stub implementations**:
 
-- `findPageByTitle(spaceKey, title)` - GET /rest/api/content with query params
-- `createPage(...)` - POST /rest/api/content
-- `updatePage(...)` - PUT /rest/api/content/{id} with incremented version
-- `uploadAttachments(pageId, paths)` - POST multipart to /rest/api/content/{id}/child/attachment
-- `buildWebUrl(page)` - construct web URL from _links.webui
+- `improve-content`: Return variations of input (original, truncated, uppercase)
+- `generate-description`: Return sanitized/truncated description or default
 
-**Attachment Upload**:
+## Design Guidelines
 
-- Use MultipartBodyBuilder with FileSystemResource
-- Include header `X-Atlassian-Token: nocheck`
+- Use `@RestController` and `@RequestMapping`
+- Use `@RequiredArgsConstructor` for dependency injection
+- Use `@Valid` for request body validation
+- Return appropriate HTTP status codes (200, 201)
+- Map entities to DTOs before returning
 
-## Confluence REST API Endpoints
+## API Summary
 
-| Operation | Method | Endpoint                                              |
-|-----------|--------|-------------------------------------------------------|
-| Search    | GET    | `/rest/api/content?spaceKey=X&title=Y&expand=version` |
-| Create    | POST   | `/rest/api/content`                                   |
-| Update    | PUT    | `/rest/api/content/{id}`                              |
-| Get       | GET    | `/rest/api/content/{id}`                              |
-| Attach    | POST   | `/rest/api/content/{id}/child/attachment`             |
+| Endpoint                       | Method | Description            |
+|--------------------------------|--------|------------------------|
+| `/api/health`                  | GET    | Health check           |
+| `/api/config`                  | GET    | Frontend configuration |
+| `/api/pages`                   | POST   | Create page            |
+| `/api/pages/{id}`              | GET    | Get page               |
+| `/api/attachments`             | POST   | Upload file            |
+| `/api/schedules`               | POST   | Create schedule        |
+| `/api/schedules`               | GET    | List schedules         |
+| `/api/schedules/{id}`          | GET    | Get schedule           |
+| `/api/confluence/publish`      | POST   | Publish immediately    |
+| `/api/ai/improve-content`      | POST   | Content suggestions    |
+| `/api/ai/generate-description` | POST   | Generate description   |
 
 ## Verification Criteria
 
-- Stub provider logs without API calls
-- Server provider authenticates correctly
-- Pages created/updated with proper versioning
-- Attachments uploaded successfully
+- All endpoints respond correctly
+- Validation errors return 400
+- Not found errors return 404
+- CORS headers present
+- File uploads work with multipart/form-data

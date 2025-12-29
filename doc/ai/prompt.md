@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 09: Frontend Setup and Routing
+Here is Prompt 10: Frontend API Service
 
 ## Role
 
@@ -14,101 +14,75 @@ You are an expert front-end engineer.
 
 ## Task
 
-Set up the Angular 20 frontend with standalone components, routing, and TailwindCSS styling.
+Create the Angular service that handles all HTTP communication with the backend API.
 
-## Requirements
+## Location
 
-### Main Entry Point (main.ts)
+`src/app/services/api.service.ts`
 
-- Bootstrap AppComponent using `bootstrapApplication`
-- Provide router with routes
-- Provide HttpClient
+## TypeScript Interfaces to Define
 
-### Routes (app.routes.ts)
+| Interface                     | Fields                                                                                                          |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Attachment                    | id: number, filename: string, description?: string                                                              |
+| Schedule                      | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number, lastError?: string       |
+| ContentImprovementResponse    | suggestions: string[]                                                                                           |
+| AttachmentDescriptionResponse | description: string                                                                                             |
+| PageResponse                  | id: number, title: string, content: string, spaceKey: string, parentPageId?: number, attachments?: Attachment[] |
+| PublishResponse               | logId?: number, status: string, confluencePageId?: string                                                       |
 
-| Path         | Component          | Loading     |
-|--------------|--------------------|-------------|
-| `/`          | ComposeComponent   | Lazy loaded |
-| `/schedules` | SchedulesComponent | Lazy loaded |
+## ApiService Class
 
-### App Component (app.component.ts)
+**Setup**:
 
-A standalone component with inline template containing:
+- Injectable with `providedIn: 'root'`
+- Inject HttpClient using `inject()` function
+- Read apiBase from environment
 
-**Layout Structure**:
+**Helper Method**:
 
-- Header with app title "Confluence Publisher" and navigation links
-- Main content area with `<router-outlet>`
-- Footer with copyright
+- `api(path: string)` - returns full URL: `${apiBase}/api${path}`
 
-**Navigation**:
+## API Methods
 
-- Link to "/" labeled "Compose"
-- Link to "/schedules" labeled "Schedules"
-- Use `routerLinkActive` for active state styling
+| Method              | HTTP | Endpoint                 | Parameters                                             | Returns                                   |
+|---------------------|------|--------------------------|--------------------------------------------------------|-------------------------------------------|
+| uploadAttachment    | POST | /attachments             | File, description?                                     | Observable<Attachment>                    |
+| improveContent      | POST | /ai/improve-content      | content: string                                        | Observable<ContentImprovementResponse>    |
+| createPage          | POST | /pages                   | title, content, spaceKey, attachmentIds, parentPageId? | Observable<PageResponse>                  |
+| publishNow          | POST | /confluence/publish      | pageId: number                                         | Observable<PublishResponse>               |
+| schedulePage        | POST | /schedules               | pageId: number                                         | Observable<Schedule>                      |
+| getSchedules        | GET  | /schedules               | -                                                      | Observable<Schedule[]>                    |
+| getConfig           | GET  | /config                  | -                                                      | Observable<{defaultSpace: string}>        |
+| generateDescription | POST | /ai/generate-description | description?: string                                   | Observable<AttachmentDescriptionResponse> |
 
-**Styling** (TailwindCSS):
+## Implementation Notes
 
-- Min-height screen, flex column layout
-- Header: white background, border bottom
-- Content: max-width container, centered
-- Footer: border top, small text
+**File Upload**:
 
-### Index HTML
+- Create FormData
+- Append 'file' and optional 'description'
+- POST without explicit Content-Type (browser sets multipart boundary)
 
-- Standard HTML5 doctype
-- Title: "Confluence Publisher"
-- Body with `bg-gray-50` class
-- `<app-root>` element
+**Optional Parameters**:
 
-### Global Styles (styles.css)
+- Only include spaceKey in body if provided
+- Backend uses default if not sent
 
-- Import Tailwind base, components, utilities
-- Set color-scheme to light
+## Usage Example
 
-### Environment Files
+```typescript
+// In component
+private apiService = inject(ApiService);
 
-**environment.ts** (development):
-
-- apiBase: 'http://localhost:8080'
-- production: false
-
-**environment.prod.ts** (production):
-
-- apiBase: 'http://localhost:8080'
-- production: true
-
-### TypeScript Configuration
-
-- Strict mode enabled
-- ES2022 target
-- Bundler module resolution
-- Angular strict templates enabled
-
-## Design Guidelines
-
-- Use standalone components (no NgModules)
-- Use inline templates for simple components
-- Use TailwindCSS utility classes
-- Lazy load page components for code splitting
-
-## Application Layout
-
-```
-┌─────────────────────────────────────────────┐
-│  Confluence Publisher    [Compose] [Schedules] │
-├─────────────────────────────────────────────┤
-│                                             │
-│            <router-outlet>                  │
-│                                             │
-├─────────────────────────────────────────────┤
-│  © 2024 Confluence Publisher                │
-└─────────────────────────────────────────────┘
+async upload() {
+  const result = await firstValueFrom(this.apiService.uploadAttachment(file));
+}
 ```
 
 ## Verification Criteria
 
-- App starts with `npm start`
-- Navigation works between pages
-- TailwindCSS classes applied
-- No console errors
+- Service compiles without errors
+- All methods return typed Observables
+- File uploads work with FormData
+- API base URL configurable via environment

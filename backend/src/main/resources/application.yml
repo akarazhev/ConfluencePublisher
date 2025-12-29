@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: confluence-publisher
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:sqlite:./data/app.db}
+    driver-class-name: org.sqlite.JDBC
+  
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: when-authorized
+
+confluence:
+  url: ${CONFLUENCE_URL:}
+  username: ${CONFLUENCE_USERNAME:}
+  api-token: ${CONFLUENCE_API_TOKEN:}
+  default-space: ${CONFLUENCE_DEFAULT_SPACE:}
+  provider-type: ${CONFLUENCE_PROVIDER_TYPE:confluence-server}
+
+app:
+  attachment-directory: ${ATTACHMENT_DIRECTORY:storage/attachments}
+  scheduler:
+    interval-seconds: ${SCHEDULER_INTERVAL_SECONDS:60}
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+      - http://localhost:8080
+      - http://localhost:5173
+

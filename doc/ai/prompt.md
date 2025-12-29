@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 05: Backend Services
+Here is Prompt 06: Backend Confluence Providers
 
 ## Role
 
@@ -14,107 +14,104 @@ You are an expert Java engineer.
 
 ## Task
 
-Create the service layer with business logic for the Confluence Publisher application.
+Create the provider pattern for Confluence API integration with a stub for testing and a real server provider.
 
-## Package
+## Package Structure
 
-`com.confluence.publisher.service`
+- `com.confluence.publisher.provider` - Provider classes
+- `com.confluence.publisher.provider.dto` - Confluence API DTOs
 
-## Services to Create
+## Components to Create
 
-### 1. PageService
+### 1. BaseProvider Interface
 
-**Dependencies**: PageRepository, PageAttachmentRepository, AttachmentRepository
+Define an interface with:
 
-**Methods**:
+- `publishPage(spaceKey, title, content, parentPageId, attachmentPaths)` → ProviderResult
+- `getStatus(confluencePageId)` → String
+- Inner record `ProviderResult(String confluencePageId, String message)`
 
-- `createPage(title, content, spaceKey, parentPageId, attachmentIds)` → Page
-    - Save the page entity
-    - Create PageAttachment records for each attachment ID with position index
-    - Return the saved page
+### 2. ConfluenceStubProvider
 
-- `getPage(pageId)` → PageResponse
-    - Find page by ID or throw "Page not found" exception
-    - Load associated attachments via PageAttachmentRepository
-    - Build and return PageResponse with attachment info
+A stub implementation for testing:
 
-### 2. AttachmentService
+- Generate fake page ID like "CONF-" + random UUID substring
+- Log the operation details
+- Return success result without making real API calls
 
-**Dependencies**: AttachmentRepository, AppProperties
+### 3. ProviderFactory
 
-**Methods**:
+Factory to select provider based on configuration:
 
-- `uploadAttachment(MultipartFile file, description)` → Attachment
-    - Create attachment directory if needed
-    - Generate UUID-based filename preserving original extension
-    - Write file bytes to disk
-    - Create Attachment entity with original filename, content type, size, storage path
-    - Save and return the attachment
+- Inject AppProperties, ConfluenceStubProvider, ConfluenceServerProvider
+- `getProvider()` method returns provider based on `app.provider` config:
+    - "confluence-server" or "server" → ConfluenceServerProvider
+    - "confluence-stub" or "stub" → ConfluenceStubProvider
+    - Unknown → fallback to stub with warning
+- `getProviderName()` returns configured provider name
 
-### 3. ScheduleService
+### 4. Confluence API DTOs
 
-**Dependencies**: ScheduleRepository
+**ConfluencePageRequest** (for creating/updating pages):
 
-**Methods**:
+- type, title, space (nested: key), body (nested: storage with value and representation)
+- ancestors (list of id), version (nested: number)
+- Use `@JsonInclude(NON_NULL)` to omit null fields
 
-- `createSchedule(pageId, scheduledAt)` → Schedule
-    - Use current time if scheduledAt is null
-    - Create schedule with status "queued"
+**ConfluencePageResponse** (API response):
 
-- `getSchedule(scheduleId)` → Schedule
-    - Find by ID or throw "Schedule not found"
+- id, type, status, title, space, version, _links (webui, self)
+- Use `@JsonIgnoreProperties(ignoreUnknown = true)`
 
-- `listSchedules(limit)` → List<Schedule>
-    - Return the latest schedules sorted by ID descending, limited by the provided `limit` (for example, 50 for the list
-      endpoint)
+**ConfluenceSearchResponse**:
 
-- `findQueuedSchedules(now)` → List<Schedule>
-    - Find schedules with status "queued" and scheduledAt <= now
+- results (List<ConfluencePageResponse>), start, limit, size
 
-- `updateScheduleStatus(schedule, status, error)` → void
-    - Update status, increment attemptCount, set lastError
+### 5. ConfluenceServerProvider
 
-### 4. PublishService
+Real Confluence integration using Spring's RestClient:
 
-**Dependencies**: PageRepository, PageAttachmentRepository, AttachmentRepository, PublishLogRepository, ProviderFactory
+**RestClient Setup**:
 
-**Methods**:
+- Lazy initialization with double-checked locking
+- Base URL from AppProperties (remove trailing slash)
+- Authentication: Bearer token if API token > 30 chars, otherwise Basic auth
+- Default headers: Authorization, Content-Type, Accept
 
-- `publishPage(pageId)` → PublishLog
-    - Find page by ID
-    - Get attachment file paths for the page
-    - Get provider from ProviderFactory
-    - Call provider.publishPage() with page data
-    - Create and save PublishLog with result
-    - Return the publish log
+**publishPage Method**:
 
-### 5. AiService
+1. Search for existing page by title in space
+2. If exists → update page (increment version number)
+3. If not exists → create new page
+4. Upload attachments if any
+5. Return ProviderResult with page ID and web URL
 
-**Dependencies**: None (stub implementation)
+**Helper Methods**:
 
-**Methods**:
+- `findPageByTitle(spaceKey, title)` - GET /rest/api/content with query params
+- `createPage(...)` - POST /rest/api/content
+- `updatePage(...)` - PUT /rest/api/content/{id} with incremented version
+- `uploadAttachments(pageId, paths)` - POST multipart to /rest/api/content/{id}/child/attachment
+- `buildWebUrl(page)` - construct web URL from _links.webui
 
-- `improveContent(content)` → List<String>
-    - Return stub suggestions: original content, truncated version (first 100 chars + "..."), uppercase version
-    - This is a placeholder for future AI integration
+**Attachment Upload**:
 
-- `generateDescription(description)` → String
-    - If description is null or blank, return "No description provided"
-    - Otherwise return sanitized/truncated description (max 200 chars)
-    - This is a placeholder for future AI integration
+- Use MultipartBodyBuilder with FileSystemResource
+- Include header `X-Atlassian-Token: nocheck`
 
-## Design Guidelines
+## Confluence REST API Endpoints
 
-- Use `@Service` and `@RequiredArgsConstructor`
-- Use `@Transactional` for write operations
-- Use `@Transactional(readOnly = true)` for read operations
-- Throw `RuntimeException` with messages that include the phrase "not found" for missing resources (for example, "Page
-  not found: " + id or "Schedule not found: " + id) so the global exception handler can map them to 404
-- Use Lombok `@Slf4j` for logging
+| Operation | Method | Endpoint                                              |
+|-----------|--------|-------------------------------------------------------|
+| Search    | GET    | `/rest/api/content?spaceKey=X&title=Y&expand=version` |
+| Create    | POST   | `/rest/api/content`                                   |
+| Update    | PUT    | `/rest/api/content/{id}`                              |
+| Get       | GET    | `/rest/api/content/{id}`                              |
+| Attach    | POST   | `/rest/api/content/{id}/child/attachment`             |
 
 ## Verification Criteria
 
-- All services compile and can be injected
-- Transactions rollback on errors
-- File uploads saved to configured directory
-- Page-attachment relationships maintained correctly
+- Stub provider logs without API calls
+- Server provider authenticates correctly
+- Pages created/updated with proper versioning
+- Attachments uploaded successfully

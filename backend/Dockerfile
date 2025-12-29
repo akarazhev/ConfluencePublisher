@@ -1,35 +1,37 @@
-# Build stage
-FROM gradle:8.11.1-jdk21 AS build
+# Build Stage
+FROM gradle:8.5-jdk21 AS build
 
 WORKDIR /app
 
-# Copy Gradle files
+# Copy Gradle files first for dependency caching
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle ./gradle
 
 # Download dependencies
-RUN gradle dependencies --no-daemon || true
+RUN gradle dependencies --no-daemon
 
 # Copy source code
 COPY src ./src
 
 # Build application
-RUN gradle bootJar --no-daemon
+RUN gradle build -x test --no-daemon
 
-# Runtime stage
+# Runtime Stage
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy built JAR from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+# Create necessary directories
+RUN mkdir -p /data /storage/attachments
 
-# Create directories for data and attachments
-RUN mkdir -p /app/data /app/storage/attachments
+# Copy JAR from build stage
+COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar
+
+# Set environment variables for Docker profile
+ENV SPRING_PROFILES_ACTIVE=docker
 
 # Expose port
 EXPOSE 8080
 
-# Run application
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-
+# Entrypoint
+ENTRYPOINT ["java", "-jar", "app.jar"]

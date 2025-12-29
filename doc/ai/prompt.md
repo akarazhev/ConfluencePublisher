@@ -6,105 +6,163 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 12: Frontend Schedules Component
+Here is Prompt 13: Docker Deployment Configuration
 
 ## Role
 
-You are an expert front-end engineer.
+You are an expert DevOps engineer.
 
 ## Task
 
-Create the Schedules page component that displays all publication schedules with auto-refresh.
+Create container configuration (Docker/Podman) for containerized deployment of the Confluence Publisher application.
 
-## Location
+## Constraints
 
-`src/app/pages/schedules/schedules.component.ts`
+- All backend and frontend builds MUST run inside the defined container images (Docker/Podman-compatible); the host
+  environment MUST NOT require local Java, Gradle, Node.js, or Angular CLI installations.
+- Running `docker compose up --build` or `podman compose up --build` MUST be sufficient to build all images and start
+  the full application from a clean checkout on a machine that has only Docker or Podman with a Compose-compatible CLI
+  installed.
 
-## Component Configuration
+## Files to Create
 
-- Standalone component
-- Imports: CommonModule
-- ChangeDetection: OnPush
-- Implements: OnInit, OnDestroy
-- Inline template
-
-## State (using Angular Signals)
-
-| Signal | Type       | Initial |
-|--------|------------|---------|
-| rows   | Schedule[] | []      |
-| busy   | boolean    | false   |
-
-## Lifecycle
-
-**ngOnInit**:
-
-- Call load() immediately
-- Set up interval to call load() every 5 seconds
-- Check `typeof window !== 'undefined'` for SSR safety
-
-**ngOnDestroy**:
-
-- Clear the interval
-
-## Template Structure
-
-**Header Row**:
-
-- Title: "Publication Schedules"
-- Refresh button (disabled when busy)
-
-**Data Table**:
-
-- Columns: ID, Page ID, Status, Scheduled, Attempts, Error
-- Status column with color coding: green for "posted", yellow for "queued", red for "failed"
-- Error column shows lastError (truncated if long, with tooltip for full text)
-- Alternating row colors using `$even`
-- Horizontal scroll on overflow
-
-## Methods
-
-| Method                 | Description                                   |
-|------------------------|-----------------------------------------------|
-| load()                 | Fetch schedules from API, update rows         |
-| formatDate(dateString) | Convert ISO string to localized date          |
-| getStatusClass(status) | Return TailwindCSS classes for status badge   |
-| truncateError(error)   | Truncate error message to 30 chars with "..." |
-
-## Table Layout
+### 1. Backend .dockerignore (`backend/.dockerignore`)
 
 ```
-┌────┬─────────┬────────┬─────────────────┬──────────┬─────────────────┐
-│ ID │ Page ID │ Status │ Scheduled       │ Attempts │ Error           │
-├────┼─────────┼────────┼─────────────────┼──────────┼─────────────────┤
-│ 1  │ 5       │ posted │ 12/8/24, 3:00PM │ 1        │ -               │
-│ 2  │ 6       │ failed │ 12/8/24, 4:00PM │ 3        │ Connection err… │
-│ 3  │ 7       │ queued │ 12/8/24, 5:00PM │ 0        │ -               │
-└────┴─────────┴────────┴─────────────────┴──────────┴─────────────────┘
+build/
+.gradle/
+*.log
+*.iml
+.idea/
 ```
 
-## Styling (TailwindCSS)
+### 2. Backend Dockerfile (`backend/Dockerfile`)
 
-- White background table with border
-- Gray header row
-- Alternating row backgrounds
-- Padding on cells
-- Border bottom on cells
-- Status badges: `bg-green-100 text-green-800` for posted, `bg-yellow-100 text-yellow-800` for queued,
-  `bg-red-100 text-red-800` for failed
-- Error text in `text-red-600` with `truncate` class and `title` attribute for tooltip
+**Build Stage**:
 
-## Status Values
+- Base: `gradle:8.5-jdk21`
+- Copy Gradle files first (for dependency caching)
+- Run `gradle dependencies`
+- Copy source code
+- Build with `gradle build -x test`
 
-- **queued**: Waiting to be processed
-- **posted**: Successfully published
-- **failed**: Publication failed
+**Runtime Stage**:
+
+- Base: `eclipse-temurin:21-jre-alpine`
+- Create directories: /data, /storage/attachments
+- Copy JAR from build stage
+- Set environment variables for Docker profile
+- Expose port 8080
+- Entrypoint: `java -jar app.jar`
+
+### 3. Frontend .dockerignore (`frontend/.dockerignore`)
+
+```
+node_modules/
+dist/
+.angular/
+*.log
+```
+
+### 4. Frontend Dockerfile (`frontend/Dockerfile`)
+
+**Build Stage**:
+
+- Base: `node:20-alpine`
+- Accept build arg `NG_APP_API_BASE`
+- Install dependencies
+- Use Angular's `fileReplacements` in `angular.json` for production builds (already configured)
+- Alternatively, use `sed` to replace apiBase in environment.prod.ts if needed
+- Run `npm run build`
+
+**Runtime Stage**:
+
+- Base: `nginx:alpine`
+- Copy nginx.conf
+- Copy built files from dist folder
+- Expose port 80
+
+### 5. Nginx Configuration (`frontend/nginx.conf`)
+
+- Listen on port 80
+- Serve static files from /usr/share/nginx/html
+- Use try_files for SPA routing (fallback to index.html)
+
+### 6. Docker Compose (`docker-compose.yml`)
+
+**Backend Service**:
+
+- Build from backend/Dockerfile
+- Port: 8080:8080
+- Load .env file
+- Environment variables for Confluence config and application paths (for example, APP_DATABASE_URL, APP_ATTACHMENT_DIR)
+- Named volumes for data and attachments, mounted as `data:/data` and `attachments:/storage/attachments`
+- Health check: GET /api/health
+- Restart: unless-stopped
+
+**Frontend Service**:
+
+- Build from frontend/Dockerfile with NG_APP_API_BASE arg
+- Port: 4200:80
+- Depends on backend (healthy)
+- Restart: unless-stopped
+
+**Volumes**:
+
+- data: for SQLite database
+- attachments: for uploaded files
+
+### 7. Environment Example (`.env.example`)
+
+```
+CONFLUENCE_URL=https://your-domain.atlassian.net/confluence
+CONFLUENCE_USERNAME=your-username
+CONFLUENCE_API_TOKEN=your-api-token
+CONFLUENCE_DEFAULT_SPACE=YOUR_SPACE_KEY
+CONFLUENCE_PROVIDER=confluence-server
+SCHEDULER_INTERVAL_SECONDS=5
+APP_DATABASE_URL=jdbc:sqlite:/data/app.db
+APP_ATTACHMENT_DIR=/storage/attachments
+CORS_ORIGINS=http://localhost:4200,http://localhost:8080
+NG_APP_API_BASE=http://localhost:8080
+```
+
+## Deployment Commands
+
+**Build and Run**:
+
+```bash
+cp .env.example .env
+# Edit .env with credentials
+# Docker
+docker compose up --build
+
+# or Podman
+podman compose up --build
+```
+
+**Access**:
+
+- Frontend: http://localhost:4200
+- Backend: http://localhost:8080/api/health
+
+**Stop**:
+
+```bash
+# Docker
+docker compose down      # Stop containers
+docker compose down -v   # Also remove volumes
+
+# or Podman
+podman compose down      # Stop containers
+podman compose down -v   # Also remove volumes
+```
 
 ## Verification Criteria
 
-- Table loads on initialization
-- Auto-refresh every 5 seconds
-- Manual refresh button works
-- Dates formatted correctly
-- Alternating row colors
-- No memory leaks (interval cleared)
+- Both images build successfully
+- Backend passes health check
+- Frontend serves Angular app
+- API calls work from frontend
+- Data persists across restarts
+- Environment variables loaded correctly

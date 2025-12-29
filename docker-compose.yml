@@ -8,46 +8,54 @@ services:
     container_name: confluence-publisher-backend
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=jdbc:sqlite:/app/data/app.db
-      - ATTACHMENT_DIRECTORY=/app/storage/attachments
-      - CONFLUENCE_URL=${CONFLUENCE_URL:-}
-      - CONFLUENCE_USERNAME=${CONFLUENCE_USERNAME:-}
-      - CONFLUENCE_API_TOKEN=${CONFLUENCE_API_TOKEN:-}
-      - CONFLUENCE_DEFAULT_SPACE=${CONFLUENCE_DEFAULT_SPACE:-}
-      - CONFLUENCE_PROVIDER_TYPE=${CONFLUENCE_PROVIDER_TYPE:-confluence-server}
-      - SCHEDULER_INTERVAL_SECONDS=${SCHEDULER_INTERVAL_SECONDS:-60}
+      - SPRING_PROFILES_ACTIVE=docker
+      - APP_DATABASE_URL=${APP_DATABASE_URL:-jdbc:sqlite:/data/app.db}
+      - APP_ATTACHMENT_DIR=${APP_ATTACHMENT_DIR:-/storage/attachments}
+      - CONFLUENCE_URL=${CONFLUENCE_URL}
+      - CONFLUENCE_USERNAME=${CONFLUENCE_USERNAME}
+      - CONFLUENCE_API_TOKEN=${CONFLUENCE_API_TOKEN}
+      - CONFLUENCE_DEFAULT_SPACE=${CONFLUENCE_DEFAULT_SPACE}
+      - CONFLUENCE_PROVIDER=${CONFLUENCE_PROVIDER:-confluence-server}
+      - SCHEDULER_INTERVAL_SECONDS=${SCHEDULER_INTERVAL_SECONDS:-5}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:4200,http://localhost:8080}
     volumes:
-      - ./data:/app/data
-      - ./storage/attachments:/app/storage/attachments
-    networks:
-      - confluence-publisher-network
-    restart: unless-stopped
+      - data:/data
+      - attachments:/storage/attachments
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - confluence-network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NG_APP_API_BASE=${NG_APP_API_BASE:-http://localhost:8080}
     container_name: confluence-publisher-frontend
     ports:
       - "4200:80"
     depends_on:
-      - backend
-    networks:
-      - confluence-publisher-network
+      backend:
+        condition: service_healthy
     restart: unless-stopped
-
-networks:
-  confluence-publisher-network:
-    driver: bridge
+    networks:
+      - confluence-network
 
 volumes:
   data:
+    driver: local
   attachments:
+    driver: local
 
+networks:
+  confluence-network:
+    driver: bridge

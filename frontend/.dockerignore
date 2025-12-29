@@ -1,9 +1,4 @@
-node_modules
-dist
-.angular
-coverage
-.vscode
-.idea
+node_modules/
+dist/
+.angular/
 *.log
-.DS_Store
-

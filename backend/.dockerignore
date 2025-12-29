@@ -1,8 +1,5 @@
-.gradle
-build
-bin
-out
-.idea
+build/
+.gradle/
+*.log
 *.iml
-.DS_Store
-
+.idea/

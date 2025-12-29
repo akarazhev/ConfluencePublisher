@@ -6,86 +6,99 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 01: Project Setup and Configuration
+Here is Prompt 02: Backend Entities and Repositories
 
 ## Role
 
-You are an expert Java engineer and expert front-end engineer.
+You are an expert Java engineer.
 
 ## Task
 
-Create the initial project structure and configuration for a full-stack web application called **"Confluence Publisher"
-** - a tool for creating, scheduling, and publishing pages to Atlassian Confluence.
+Create the JPA entities and Spring Data repositories for the Confluence Publisher data layer.
 
-## Technology Stack
+## Package Structure
 
-- **Backend**: Spring Boot 3.2, Java 21, Gradle (Kotlin DSL)
-- **Frontend**: Angular 20, TypeScript, TailwindCSS
-- **Database**: SQLite with Hibernate/JPA (using `hibernate-community-dialects`)
-- **Containerization**: Docker or Podman with multi-stage builds
+- `com.confluence.publisher.entity` - JPA entities
+- `com.confluence.publisher.repository` - Spring Data repositories
 
-## Build and Runtime Requirements
+## Entities to Create
 
-- The backend and frontend MUST be buildable and runnable using only Docker or Podman together with a Compose-compatible
-  CLI (e.g. `docker compose` or `podman compose`).
-- Local installation of Java, Gradle, Node.js, or Angular CLI MUST NOT be required for building and running the
-  application; these tools may be used optionally for local development, but containerized workflows are the primary
-  supported path.
+### 1. Page Entity
 
-## Project Structure Requirements
+| Field        | Type    | Constraints                        |
+|--------------|---------|------------------------------------|
+| id           | Long    | Primary key, auto-generated        |
+| title        | String  | Required, max 500 chars            |
+| content      | String  | Required, TEXT type                |
+| spaceKey     | String  | Required, max 50 chars             |
+| parentPageId | Long    | Optional, reference to parent page |
+| authorId     | Long    | Optional                           |
+| createdAt    | Instant | Auto-set on creation               |
+| updatedAt    | Instant | Auto-updated on modification       |
 
-Create a monorepo with:
+### 2. Attachment Entity
 
-- `backend/` - Spring Boot application
-- `frontend/` - Angular application
-- `data/` - SQLite database directory (gitignored)
-- `storage/attachments/` - File upload directory (gitignored)
-- Root-level Docker Compose and environment files
+| Field       | Type   | Constraints                  |
+|-------------|--------|------------------------------|
+| id          | Long   | Primary key, auto-generated  |
+| filename    | String | Required, original filename  |
+| contentType | String | Required, MIME type          |
+| size        | Long   | Required, file size in bytes |
+| storagePath | String | Required, path on disk       |
+| description | String | Optional, TEXT type          |
 
-## Backend Requirements
+### 3. PageAttachment Entity (Join Table)
 
-1. **Gradle build** with Spring Boot starters: web, data-jpa, validation, actuator
-2. **SQLite database** using `org.xerial:sqlite-jdbc` and `hibernate-community-dialects`
-3. **Lombok** for boilerplate reduction
-4. **application.yml** with configurable properties:
-    - Database URL (default: `jdbc:sqlite:./data/app.db`)
-    - Attachment directory (default: `storage/attachments`)
-    - Confluence URL, username, API token, default space (all from environment variables)
-    - CORS origins list (localhost:4200, 8080, 5173)
-    - Provider type (confluence-server or confluence-stub)
-    - Scheduler interval in seconds
-5. **Multipart upload** support up to 50MB
-6. **Actuator** health endpoint exposed
+| Field        | Type    | Constraints                       |
+|--------------|---------|-----------------------------------|
+| id           | Long    | Primary key, auto-generated       |
+| pageId       | Long    | Required                          |
+| attachmentId | Long    | Required                          |
+| position     | Integer | Required, default 0, for ordering |
 
-## Frontend Requirements
+### 4. Schedule Entity
 
-1. **Angular 20** with standalone components (no NgModules)
-2. **TailwindCSS** for styling
-3. **Environment files** with configurable API base URL
-4. **TypeScript strict mode** enabled
+| Field        | Type    | Constraints                                       |
+|--------------|---------|---------------------------------------------------|
+| id           | Long    | Primary key, auto-generated                       |
+| pageId       | Long    | Required                                          |
+| scheduledAt  | Instant | Required, when to publish                         |
+| status       | String  | Required, default "queued" (queued/posted/failed) |
+| attemptCount | Integer | Required, default 0                               |
+| lastError    | String  | Optional, TEXT type, error message                |
 
-## Configuration Files Needed
+### 5. PublishLog Entity
 
-- `backend/build.gradle.kts` - Gradle build with all dependencies
-- `backend/settings.gradle.kts` - Project name
-- `backend/src/main/resources/application.yml` - Spring configuration
-- `backend/src/main/java/com/confluence/publisher/ConfluencePublisherApplication.java` - Main application class (
-  placeholder)
-- `frontend/package.json` - npm dependencies
-- `frontend/angular.json` - Angular CLI configuration
-- `frontend/tailwind.config.js` - TailwindCSS setup
-- `frontend/tsconfig.json` - TypeScript configuration
-- `frontend/src/main.ts` - Angular bootstrap entry point
-- `frontend/src/index.html` - HTML template
-- `frontend/src/styles.css` - Global styles with Tailwind imports
-- `frontend/src/environments/environment.ts` - Development environment
-- `frontend/src/environments/environment.prod.ts` - Production environment
-- `.env.example` - Environment variable template
-- `.gitignore` - Ignore data/, node_modules/, build artifacts
+| Field            | Type    | Constraints                  |
+|------------------|---------|------------------------------|
+| id               | Long    | Primary key, auto-generated  |
+| pageId           | Long    | Required                     |
+| provider         | String  | Required, provider name used |
+| spaceKey         | String  | Optional                     |
+| confluencePageId | String  | Optional, ID from Confluence |
+| status           | String  | Required                     |
+| message          | String  | Optional, TEXT type          |
+| createdAt        | Instant | Auto-set on creation         |
+
+## Repositories to Create
+
+| Repository               | Custom Methods                                                                                         |
+|--------------------------|--------------------------------------------------------------------------------------------------------|
+| PageRepository           | Standard CRUD only                                                                                     |
+| AttachmentRepository     | Standard CRUD only                                                                                     |
+| PageAttachmentRepository | `findByPageIdOrderByPosition(Long pageId)`, `deleteByPageId(Long pageId)`                              |
+| ScheduleRepository       | `findQueuedSchedulesBefore(Instant now)` - finds schedules with status="queued" and scheduledAt <= now |
+| PublishLogRepository     | Standard CRUD only                                                                                     |
+
+## Design Guidelines
+
+- Use Lombok annotations: `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`
+- Use `@CreationTimestamp` and `@UpdateTimestamp` for automatic timestamps
+- Use simple Long IDs instead of JPA relationships (simpler for SQLite)
+- Use `@Builder.Default` for fields with default values
 
 ## Verification Criteria
 
-- Backend compiles and starts with `./gradlew bootRun` on port 8080
-- Frontend installs and starts with `npm install && npm start` on port 4200
-- No compilation errors in either project
-- Ready for adding business logic in subsequent prompts
+- Application starts without JPA/Hibernate errors
+- Tables are auto-created in SQLite database
+- All repositories can perform basic CRUD operations

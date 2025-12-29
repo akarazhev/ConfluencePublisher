@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 07: Backend REST Controllers
+Here is Prompt 08: Backend Scheduler and Exception Handler
 
 ## Role
 
@@ -14,112 +14,94 @@ You are an expert Java engineer.
 
 ## Task
 
-Create REST controllers that expose the API endpoints for the Confluence Publisher application.
+Create the background scheduler for processing queued publications and the global exception handler for consistent error
+responses.
 
-## Package
+## Components to Create
 
-`com.confluence.publisher.controller`
+### 1. PageScheduler
 
-## Controllers to Create
+Package: `com.confluence.publisher.scheduler`
 
-### 1. HealthController
+**Dependencies**: ScheduleService, PublishService, AppProperties
 
-Base path: `/api`
+**Scheduled Method**: `processScheduledPosts()`
 
-| Method | Path      | Description                                     |
-|--------|-----------|-------------------------------------------------|
-| GET    | `/health` | Return `{"status": "ok"}`                       |
-| GET    | `/config` | Return `{"defaultSpace": <from AppProperties>}` |
+- Annotate with `@Scheduled(fixedDelayString = "#{@appProperties.schedulerIntervalSeconds * 1000}")`
+- Find all queued schedules where scheduledAt <= now
+- For each schedule:
+    - Try to publish the page via PublishService
+    - On success: update status to "posted"
+    - On failure: update status to "failed" with error message
+- Log results
 
-### 2. PageController
+### 2. GlobalExceptionHandler
 
-Base path: `/api/pages`
+Package: `com.confluence.publisher.exception`
 
-| Method | Path        | Request           | Response                   |
-|--------|-------------|-------------------|----------------------------|
-| POST   | `/`         | PageCreateRequest | PageResponse (201 Created) |
-| GET    | `/{pageId}` | -                 | PageResponse               |
+Use `@RestControllerAdvice` to handle exceptions globally.
 
-**POST logic**:
+**Exception Handlers**:
 
-- Use default space from AppProperties if spaceKey not provided
-- Call PageService.createPage()
-- Return created page info
+| Exception                       | Status                                        | Response                                |
+|---------------------------------|-----------------------------------------------|-----------------------------------------|
+| RuntimeException                | 404 if message contains "not found", else 500 | `{"detail": <message>}`                 |
+| MethodArgumentNotValidException | 400                                           | `{"errors": {<field>: <message>, ...}}` |
+| Exception (generic)             | 500                                           | `{"detail": "Internal server error"}`   |
 
-### 3. AttachmentController
+**Behavior**:
 
-Base path: `/api/attachments`
+- Log all exceptions
+- Extract field errors from validation exceptions
+- Don't expose internal details for generic exceptions
+- Assume not-found cases throw `RuntimeException` messages containing the phrase "not found" (for example, "Page not
+  found: 123" or "Schedule not found: 5") so they can be mapped to 404
 
-| Method | Path | Request                                      | Response                               |
-|--------|------|----------------------------------------------|----------------------------------------|
-| POST   | `/`  | MultipartFile "file", optional "description" | AttachmentUploadResponse (201 Created) |
+## Scheduler Flow
 
-### 4. ScheduleController
+```
+Every N seconds:
+1. Query: SELECT * FROM schedule WHERE status='queued' AND scheduledAt <= NOW
+2. For each schedule:
+   - Call publishService.publishPage(pageId)
+   - Update schedule status and attemptCount
+3. Log success/failure
+```
 
-Base path: `/api/schedules`
+## Error Response Formats
 
-| Method | Path            | Request               | Response                       |
-|--------|-----------------|-----------------------|--------------------------------|
-| POST   | `/`             | ScheduleCreateRequest | ScheduleResponse (201 Created) |
-| GET    | `/{scheduleId}` | -                     | ScheduleResponse               |
-| GET    | `/`             | -                     | List<ScheduleResponse>         |
+**Validation Error (400)**:
 
-Include private helper method `toResponse(Schedule)` to convert entity to DTO.
-For the list endpoint, call `ScheduleService.listSchedules(50)` to return the 50 most recent schedules ordered by ID
-descending.
+```json
+{
+  "errors": {
+    "title": "Title is required",
+    "content": "Content is required"
+  }
+}
+```
 
-### 5. ConfluenceController
+**Not Found (404)**:
 
-Base path: `/api/confluence`
+```json
+{
+  "detail": "Page not found: 123"
+}
+```
 
-| Method | Path       | Request                  | Response        |
-|--------|------------|--------------------------|-----------------|
-| POST   | `/publish` | ConfluencePublishRequest | PublishResponse |
+**Server Error (500)**:
 
-Call PublishService.publishPage() and return result.
-
-### 6. AiController
-
-Base path: `/api/ai`
-
-| Method | Path                    | Request                      | Response                      |
-|--------|-------------------------|------------------------------|-------------------------------|
-| POST   | `/improve-content`      | ContentImprovementRequest    | ContentImprovementResponse    |
-| POST   | `/generate-description` | AttachmentDescriptionRequest | AttachmentDescriptionResponse |
-
-**Stub implementations**:
-
-- `improve-content`: Return variations of input (original, truncated, uppercase)
-- `generate-description`: Return sanitized/truncated description or default
-
-## Design Guidelines
-
-- Use `@RestController` and `@RequestMapping`
-- Use `@RequiredArgsConstructor` for dependency injection
-- Use `@Valid` for request body validation
-- Return appropriate HTTP status codes (200, 201)
-- Map entities to DTOs before returning
-
-## API Summary
-
-| Endpoint                       | Method | Description            |
-|--------------------------------|--------|------------------------|
-| `/api/health`                  | GET    | Health check           |
-| `/api/config`                  | GET    | Frontend configuration |
-| `/api/pages`                   | POST   | Create page            |
-| `/api/pages/{id}`              | GET    | Get page               |
-| `/api/attachments`             | POST   | Upload file            |
-| `/api/schedules`               | POST   | Create schedule        |
-| `/api/schedules`               | GET    | List schedules         |
-| `/api/schedules/{id}`          | GET    | Get schedule           |
-| `/api/confluence/publish`      | POST   | Publish immediately    |
-| `/api/ai/improve-content`      | POST   | Content suggestions    |
-| `/api/ai/generate-description` | POST   | Generate description   |
+```json
+{
+  "detail": "Internal server error"
+}
+```
 
 ## Verification Criteria
 
-- All endpoints respond correctly
-- Validation errors return 400
+- Scheduler runs at configured interval
+- Queued schedules processed automatically
+- Failed schedules store error messages
+- Validation errors return field-level messages
 - Not found errors return 404
-- CORS headers present
-- File uploads work with multipart/form-data
+- Generic errors don't expose internals

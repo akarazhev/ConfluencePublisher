@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 10: Frontend API Service
+Here is Prompt 11: Frontend Compose Component
 
 ## Role
 
@@ -14,75 +14,99 @@ You are an expert front-end engineer.
 
 ## Task
 
-Create the Angular service that handles all HTTP communication with the backend API.
+Create the main Compose page component for creating pages, uploading attachments, and publishing to Confluence.
 
 ## Location
 
-`src/app/services/api.service.ts`
+`src/app/pages/compose/compose.component.ts`
 
-## TypeScript Interfaces to Define
+## Component Configuration
 
-| Interface                     | Fields                                                                                                          |
-|-------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| Attachment                    | id: number, filename: string, description?: string                                                              |
-| Schedule                      | id: number, pageId: number, status: string, scheduledAt: string, attemptCount: number, lastError?: string       |
-| ContentImprovementResponse    | suggestions: string[]                                                                                           |
-| AttachmentDescriptionResponse | description: string                                                                                             |
-| PageResponse                  | id: number, title: string, content: string, spaceKey: string, parentPageId?: number, attachments?: Attachment[] |
-| PublishResponse               | logId?: number, status: string, confluencePageId?: string                                                       |
+- Standalone component
+- Imports: CommonModule, FormsModule
+- ChangeDetection: OnPush
+- Inline template
 
-## ApiService Class
+## State (using Angular Signals)
 
-**Setup**:
+| Signal       | Type           | Initial |
+|--------------|----------------|---------|
+| title        | string         | ''      |
+| content      | string         | ''      |
+| spaceKey     | string         | ''      |
+| parentPageId | string         | ''      |
+| files        | File[]         | []      |
+| descriptions | string[]       | []      |
+| attachments  | Attachment[]   | []      |
+| busy         | boolean        | false   |
+| suggestions  | string[]       | []      |
+| pageId       | number \| null | null    |
+| scheduleId   | number \| null | null    |
 
-- Injectable with `providedIn: 'root'`
-- Inject HttpClient using `inject()` function
-- Read apiBase from environment
+**Computed**:
 
-**Helper Method**:
+- `canUpload` = files.length > 0
 
-- `api(path: string)` - returns full URL: `${apiBase}/api${path}`
+## Constructor
 
-## API Methods
+- Load default space from `apiService.getConfig()` and set spaceKey
 
-| Method              | HTTP | Endpoint                 | Parameters                                             | Returns                                   |
-|---------------------|------|--------------------------|--------------------------------------------------------|-------------------------------------------|
-| uploadAttachment    | POST | /attachments             | File, description?                                     | Observable<Attachment>                    |
-| improveContent      | POST | /ai/improve-content      | content: string                                        | Observable<ContentImprovementResponse>    |
-| createPage          | POST | /pages                   | title, content, spaceKey, attachmentIds, parentPageId? | Observable<PageResponse>                  |
-| publishNow          | POST | /confluence/publish      | pageId: number                                         | Observable<PublishResponse>               |
-| schedulePage        | POST | /schedules               | pageId: number                                         | Observable<Schedule>                      |
-| getSchedules        | GET  | /schedules               | -                                                      | Observable<Schedule[]>                    |
-| getConfig           | GET  | /config                  | -                                                      | Observable<{defaultSpace: string}>        |
-| generateDescription | POST | /ai/generate-description | description?: string                                   | Observable<AttachmentDescriptionResponse> |
+## Template Sections
 
-## Implementation Notes
+### Page Creation Section
 
-**File Upload**:
+- Title input field
+- Space key input field (optional)
+- Parent page ID input field (optional, numeric)
+- Content textarea (8 rows)
+- Action buttons:
+    - "Improve content" (disabled if no content or busy)
+    - "Create page" (disabled if no title/content or busy)
+    - "Publish now" (disabled if no pageId or busy)
+    - "Schedule" (disabled if no pageId or busy)
+- Suggestions list (if any) - clickable to replace content
 
-- Create FormData
-- Append 'file' and optional 'description'
-- POST without explicit Content-Type (browser sets multipart boundary)
+### Attachments Section
 
-**Optional Parameters**:
+- File input (multiple)
+- For each selected file: filename + description input
+- "Upload" button
+- List of uploaded attachments
 
-- Only include spaceKey in body if provided
-- Backend uses default if not sent
+## Methods
 
-## Usage Example
+| Method                          | Description                                                      |
+|---------------------------------|------------------------------------------------------------------|
+| onFiles(event)                  | Set files and initialize descriptions array                      |
+| updateDescription(index, value) | Update description at index                                      |
+| uploadAll()                     | Upload all files, add to attachments, clear files                |
+| improveContent()                | Call API, set suggestions                                        |
+| createPage()                    | Call API with parentPageId (if provided), set pageId, show alert |
+| publishNow()                    | Call API, show status alert                                      |
+| schedule()                      | Call API, set scheduleId, show alert                             |
 
-```typescript
-// In component
-private apiService = inject(ApiService);
+## Async Pattern
 
-async upload() {
-  const result = await firstValueFrom(this.apiService.uploadAttachment(file));
-}
-```
+Use `firstValueFrom()` to convert Observables to Promises for async/await.
+
+## Error Handling
+
+- Set busy=false in finally block
+- Show alert on error
+- Log errors to console
+
+## Styling (TailwindCSS)
+
+- Sections with spacing (space-y-8)
+- Inputs with border, rounded, padding, focus ring
+- Buttons with colors: blue (improve), green (create), purple (publish), amber (schedule)
+- Disabled state with opacity-50
 
 ## Verification Criteria
 
-- Service compiles without errors
-- All methods return typed Observables
-- File uploads work with FormData
-- API base URL configurable via environment
+- Form inputs work correctly
+- File uploads complete successfully
+- Page creation returns page ID
+- Publish/Schedule enabled after page creation
+- Suggestions are clickable
+- Busy state disables buttons

@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 02: Backend Entities and Repositories
+Here is Prompt 03: Backend DTOs (Data Transfer Objects)
 
 ## Role
 
@@ -14,91 +14,123 @@ You are an expert Java engineer.
 
 ## Task
 
-Create the JPA entities and Spring Data repositories for the Confluence Publisher data layer.
+Create the DTOs for API request/response handling in the Confluence Publisher application.
 
-## Package Structure
+## Package
 
-- `com.confluence.publisher.entity` - JPA entities
-- `com.confluence.publisher.repository` - Spring Data repositories
+`com.confluence.publisher.dto`
 
-## Entities to Create
+## Request DTOs
 
-### 1. Page Entity
+### PageCreateRequest
 
-| Field        | Type    | Constraints                        |
-|--------------|---------|------------------------------------|
-| id           | Long    | Primary key, auto-generated        |
-| title        | String  | Required, max 500 chars            |
-| content      | String  | Required, TEXT type                |
-| spaceKey     | String  | Required, max 50 chars             |
-| parentPageId | Long    | Optional, reference to parent page |
-| authorId     | Long    | Optional                           |
-| createdAt    | Instant | Auto-set on creation               |
-| updatedAt    | Instant | Auto-updated on modification       |
+| Field         | Type       | Validation                       |
+|---------------|------------|----------------------------------|
+| title         | String     | @NotBlank                        |
+| content       | String     | @NotBlank                        |
+| spaceKey      | String     | Optional (uses default if empty) |
+| parentPageId  | Long       | Optional                         |
+| attachmentIds | List<Long> | @NotNull, default empty list     |
 
-### 2. Attachment Entity
+### ScheduleCreateRequest
 
-| Field       | Type   | Constraints                  |
-|-------------|--------|------------------------------|
-| id          | Long   | Primary key, auto-generated  |
-| filename    | String | Required, original filename  |
-| contentType | String | Required, MIME type          |
-| size        | Long   | Required, file size in bytes |
-| storagePath | String | Required, path on disk       |
-| description | String | Optional, TEXT type          |
+| Field       | Type    | Validation                 |
+|-------------|---------|----------------------------|
+| pageId      | Long    | @NotNull                   |
+| scheduledAt | Instant | Optional (defaults to now) |
 
-### 3. PageAttachment Entity (Join Table)
+### ConfluencePublishRequest
 
-| Field        | Type    | Constraints                       |
-|--------------|---------|-----------------------------------|
-| id           | Long    | Primary key, auto-generated       |
-| pageId       | Long    | Required                          |
-| attachmentId | Long    | Required                          |
-| position     | Integer | Required, default 0, for ordering |
+| Field  | Type | Validation |
+|--------|------|------------|
+| pageId | Long | @NotNull   |
 
-### 4. Schedule Entity
+### ContentImprovementRequest
 
-| Field        | Type    | Constraints                                       |
-|--------------|---------|---------------------------------------------------|
-| id           | Long    | Primary key, auto-generated                       |
-| pageId       | Long    | Required                                          |
-| scheduledAt  | Instant | Required, when to publish                         |
-| status       | String  | Required, default "queued" (queued/posted/failed) |
-| attemptCount | Integer | Required, default 0                               |
-| lastError    | String  | Optional, TEXT type, error message                |
+| Field   | Type   | Validation |
+|---------|--------|------------|
+| content | String | @NotBlank  |
 
-### 5. PublishLog Entity
+### AttachmentDescriptionRequest
 
-| Field            | Type    | Constraints                  |
-|------------------|---------|------------------------------|
-| id               | Long    | Primary key, auto-generated  |
-| pageId           | Long    | Required                     |
-| provider         | String  | Required, provider name used |
-| spaceKey         | String  | Optional                     |
-| confluencePageId | String  | Optional, ID from Confluence |
-| status           | String  | Required                     |
-| message          | String  | Optional, TEXT type          |
-| createdAt        | Instant | Auto-set on creation         |
+| Field       | Type   | Validation |
+|-------------|--------|------------|
+| description | String | Optional   |
 
-## Repositories to Create
+## Response DTOs
 
-| Repository               | Custom Methods                                                                                         |
-|--------------------------|--------------------------------------------------------------------------------------------------------|
-| PageRepository           | Standard CRUD only                                                                                     |
-| AttachmentRepository     | Standard CRUD only                                                                                     |
-| PageAttachmentRepository | `findByPageIdOrderByPosition(Long pageId)`, `deleteByPageId(Long pageId)`                              |
-| ScheduleRepository       | `findQueuedSchedulesBefore(Instant now)` - finds schedules with status="queued" and scheduledAt <= now |
-| PublishLogRepository     | Standard CRUD only                                                                                     |
+### PageResponse
+
+| Field        | Type                 |
+|--------------|----------------------|
+| id           | Long                 |
+| title        | String               |
+| content      | String               |
+| spaceKey     | String               |
+| parentPageId | Long                 |
+| attachments  | List<AttachmentInfo> |
+
+Include nested static class `AttachmentInfo` with: id, filename, description
+
+### AttachmentUploadResponse
+
+| Field       | Type   |
+|-------------|--------|
+| id          | Long   |
+| filename    | String |
+| description | String |
+
+### ScheduleResponse
+
+| Field        | Type    |
+|--------------|---------|
+| id           | Long    |
+| pageId       | Long    |
+| status       | String  |
+| scheduledAt  | Instant |
+| attemptCount | Integer |
+| lastError    | String  |
+
+### PublishResponse
+
+| Field            | Type   |
+|------------------|--------|
+| logId            | Long   |
+| status           | String |
+| confluencePageId | String |
+
+### ContentImprovementResponse
+
+| Field       | Type         |
+|-------------|--------------|
+| suggestions | List<String> |
+
+### AttachmentDescriptionResponse
+
+| Field       | Type   |
+|-------------|--------|
+| description | String |
+
+### ConfigResponse
+
+| Field        | Type   |
+|--------------|--------|
+| defaultSpace | String |
+
+### HealthResponse
+
+| Field  | Type   |
+|--------|--------|
+| status | String |
 
 ## Design Guidelines
 
-- Use Lombok annotations: `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`
-- Use `@CreationTimestamp` and `@UpdateTimestamp` for automatic timestamps
-- Use simple Long IDs instead of JPA relationships (simpler for SQLite)
-- Use `@Builder.Default` for fields with default values
+- Request DTOs: Use `@Data` from Lombok, Jakarta Validation annotations
+- Response DTOs: Use `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`
+- Use nested static classes for complex response structures
 
 ## Verification Criteria
 
-- Application starts without JPA/Hibernate errors
-- Tables are auto-created in SQLite database
-- All repositories can perform basic CRUD operations
+- All DTOs compile without errors
+- Validation annotations trigger on invalid input
+- Jackson can serialize/deserialize all DTOs

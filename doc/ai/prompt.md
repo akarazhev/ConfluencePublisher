@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 11: Frontend Compose Component
+Here is Prompt 12: Frontend Schedules Component
 
 ## Role
 
@@ -14,99 +14,97 @@ You are an expert front-end engineer.
 
 ## Task
 
-Create the main Compose page component for creating pages, uploading attachments, and publishing to Confluence.
+Create the Schedules page component that displays all publication schedules with auto-refresh.
 
 ## Location
 
-`src/app/pages/compose/compose.component.ts`
+`src/app/pages/schedules/schedules.component.ts`
 
 ## Component Configuration
 
 - Standalone component
-- Imports: CommonModule, FormsModule
+- Imports: CommonModule
 - ChangeDetection: OnPush
+- Implements: OnInit, OnDestroy
 - Inline template
 
 ## State (using Angular Signals)
 
-| Signal       | Type           | Initial |
-|--------------|----------------|---------|
-| title        | string         | ''      |
-| content      | string         | ''      |
-| spaceKey     | string         | ''      |
-| parentPageId | string         | ''      |
-| files        | File[]         | []      |
-| descriptions | string[]       | []      |
-| attachments  | Attachment[]   | []      |
-| busy         | boolean        | false   |
-| suggestions  | string[]       | []      |
-| pageId       | number \| null | null    |
-| scheduleId   | number \| null | null    |
+| Signal | Type       | Initial |
+|--------|------------|---------|
+| rows   | Schedule[] | []      |
+| busy   | boolean    | false   |
 
-**Computed**:
+## Lifecycle
 
-- `canUpload` = files.length > 0
+**ngOnInit**:
 
-## Constructor
+- Call load() immediately
+- Set up interval to call load() every 5 seconds
+- Check `typeof window !== 'undefined'` for SSR safety
 
-- Load default space from `apiService.getConfig()` and set spaceKey
+**ngOnDestroy**:
 
-## Template Sections
+- Clear the interval
 
-### Page Creation Section
+## Template Structure
 
-- Title input field
-- Space key input field (optional)
-- Parent page ID input field (optional, numeric)
-- Content textarea (8 rows)
-- Action buttons:
-    - "Improve content" (disabled if no content or busy)
-    - "Create page" (disabled if no title/content or busy)
-    - "Publish now" (disabled if no pageId or busy)
-    - "Schedule" (disabled if no pageId or busy)
-- Suggestions list (if any) - clickable to replace content
+**Header Row**:
 
-### Attachments Section
+- Title: "Publication Schedules"
+- Refresh button (disabled when busy)
 
-- File input (multiple)
-- For each selected file: filename + description input
-- "Upload" button
-- List of uploaded attachments
+**Data Table**:
+
+- Columns: ID, Page ID, Status, Scheduled, Attempts, Error
+- Status column with color coding: green for "posted", yellow for "queued", red for "failed"
+- Error column shows lastError (truncated if long, with tooltip for full text)
+- Alternating row colors using `$even`
+- Horizontal scroll on overflow
 
 ## Methods
 
-| Method                          | Description                                                      |
-|---------------------------------|------------------------------------------------------------------|
-| onFiles(event)                  | Set files and initialize descriptions array                      |
-| updateDescription(index, value) | Update description at index                                      |
-| uploadAll()                     | Upload all files, add to attachments, clear files                |
-| improveContent()                | Call API, set suggestions                                        |
-| createPage()                    | Call API with parentPageId (if provided), set pageId, show alert |
-| publishNow()                    | Call API, show status alert                                      |
-| schedule()                      | Call API, set scheduleId, show alert                             |
+| Method                 | Description                                   |
+|------------------------|-----------------------------------------------|
+| load()                 | Fetch schedules from API, update rows         |
+| formatDate(dateString) | Convert ISO string to localized date          |
+| getStatusClass(status) | Return TailwindCSS classes for status badge   |
+| truncateError(error)   | Truncate error message to 30 chars with "..." |
 
-## Async Pattern
+## Table Layout
 
-Use `firstValueFrom()` to convert Observables to Promises for async/await.
-
-## Error Handling
-
-- Set busy=false in finally block
-- Show alert on error
-- Log errors to console
+```
+┌────┬─────────┬────────┬─────────────────┬──────────┬─────────────────┐
+│ ID │ Page ID │ Status │ Scheduled       │ Attempts │ Error           │
+├────┼─────────┼────────┼─────────────────┼──────────┼─────────────────┤
+│ 1  │ 5       │ posted │ 12/8/24, 3:00PM │ 1        │ -               │
+│ 2  │ 6       │ failed │ 12/8/24, 4:00PM │ 3        │ Connection err… │
+│ 3  │ 7       │ queued │ 12/8/24, 5:00PM │ 0        │ -               │
+└────┴─────────┴────────┴─────────────────┴──────────┴─────────────────┘
+```
 
 ## Styling (TailwindCSS)
 
-- Sections with spacing (space-y-8)
-- Inputs with border, rounded, padding, focus ring
-- Buttons with colors: blue (improve), green (create), purple (publish), amber (schedule)
-- Disabled state with opacity-50
+- White background table with border
+- Gray header row
+- Alternating row backgrounds
+- Padding on cells
+- Border bottom on cells
+- Status badges: `bg-green-100 text-green-800` for posted, `bg-yellow-100 text-yellow-800` for queued,
+  `bg-red-100 text-red-800` for failed
+- Error text in `text-red-600` with `truncate` class and `title` attribute for tooltip
+
+## Status Values
+
+- **queued**: Waiting to be processed
+- **posted**: Successfully published
+- **failed**: Publication failed
 
 ## Verification Criteria
 
-- Form inputs work correctly
-- File uploads complete successfully
-- Page creation returns page ID
-- Publish/Schedule enabled after page creation
-- Suggestions are clickable
-- Busy state disables buttons
+- Table loads on initialization
+- Auto-refresh every 5 seconds
+- Manual refresh button works
+- Dates formatted correctly
+- Alternating row colors
+- No memory leaks (interval cleared)

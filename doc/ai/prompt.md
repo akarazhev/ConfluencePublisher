@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 03: Backend DTOs (Data Transfer Objects)
+Here is Prompt 04: Backend Configuration Classes
 
 ## Role
 
@@ -14,123 +14,85 @@ You are an expert Java engineer.
 
 ## Task
 
-Create the DTOs for API request/response handling in the Confluence Publisher application.
+Create Spring configuration classes for the Confluence Publisher application.
 
 ## Package
 
-`com.confluence.publisher.dto`
+`com.confluence.publisher.config`
 
-## Request DTOs
+## Classes to Create
 
-### PageCreateRequest
+### 1. AppProperties
 
-| Field         | Type       | Validation                       |
-|---------------|------------|----------------------------------|
-| title         | String     | @NotBlank                        |
-| content       | String     | @NotBlank                        |
-| spaceKey      | String     | Optional (uses default if empty) |
-| parentPageId  | Long       | Optional                         |
-| attachmentIds | List<Long> | @NotNull, default empty list     |
+A `@ConfigurationProperties` class with prefix `app` containing:
 
-### ScheduleCreateRequest
+| Property                 | Type         | Default Value                       |
+|--------------------------|--------------|-------------------------------------|
+| appName                  | String       | "confluence-publisher"              |
+| databaseUrl              | String       | "jdbc:sqlite:./data/app.db"         |
+| attachmentDir            | String       | "storage/attachments"               |
+| confluenceUrl            | String       | "https://your-domain.atlassian.net" |
+| confluenceUsername       | String       | ""                                  |
+| confluenceDefaultSpace   | String       | "DEV"                               |
+| confluenceApiToken       | String       | ""                                  |
+| corsOrigins              | List<String> | localhost:4200, 8080, 5173          |
+| provider                 | String       | "confluence-server"                 |
+| schedulerIntervalSeconds | Integer      | 5                                   |
 
-| Field       | Type    | Validation                 |
-|-------------|---------|----------------------------|
-| pageId      | Long    | @NotNull                   |
-| scheduledAt | Instant | Optional (defaults to now) |
+Include a setter that can parse comma-separated CORS origins from environment variable.
 
-### ConfluencePublishRequest
+### 2. WebConfig
 
-| Field  | Type | Validation |
-|--------|------|------------|
-| pageId | Long | @NotNull   |
+Implements `WebMvcConfigurer` to configure CORS:
 
-### ContentImprovementRequest
+- Apply to `/api/**` paths
+- Allow origins from AppProperties.corsOrigins
+- Allow methods: GET, POST, PUT, DELETE, OPTIONS
+- Allow all headers
+- Allow credentials
 
-| Field   | Type   | Validation |
-|---------|--------|------------|
-| content | String | @NotBlank  |
+### 3. JpaConfig
 
-### AttachmentDescriptionRequest
+Creates a `DataSource` bean for SQLite:
 
-| Field       | Type   | Validation |
-|-------------|--------|------------|
-| description | String | Optional   |
+- Use `DriverManagerDataSource` with SQLite JDBC driver
+- Read URL from `app.database-url` property
+- Handle both `jdbc:sqlite:` and `jdbc:sqlite:///` URL formats
 
-## Response DTOs
+### 4. DataInitializer
 
-### PageResponse
+Implements `CommandLineRunner` to:
 
-| Field        | Type                 |
-|--------------|----------------------|
-| id           | Long                 |
-| title        | String               |
-| content      | String               |
-| spaceKey     | String               |
-| parentPageId | Long                 |
-| attachments  | List<AttachmentInfo> |
+- Create the database directory if it doesn't exist
+- Create the attachment directory if it doesn't exist
+- Log initialization completion
 
-Include nested static class `AttachmentInfo` with: id, filename, description
+### 5. Main Application Class
 
-### AttachmentUploadResponse
+`ConfluencePublisherApplication` with:
 
-| Field       | Type   |
-|-------------|--------|
-| id          | Long   |
-| filename    | String |
-| description | String |
+- `@SpringBootApplication`
+- `@EnableScheduling` for background job support
+- `@EnableConfigurationProperties(AppProperties.class)` (this registers an `AppProperties` bean with the default name
+  `appProperties`, which can be referenced from `@Scheduled` SpEL expressions)
 
-### ScheduleResponse
+## Configuration Properties Mapping
 
-| Field        | Type    |
-|--------------|---------|
-| id           | Long    |
-| pageId       | Long    |
-| status       | String  |
-| scheduledAt  | Instant |
-| attemptCount | Integer |
-| lastError    | String  |
-
-### PublishResponse
-
-| Field            | Type   |
-|------------------|--------|
-| logId            | Long   |
-| status           | String |
-| confluencePageId | String |
-
-### ContentImprovementResponse
-
-| Field       | Type         |
-|-------------|--------------|
-| suggestions | List<String> |
-
-### AttachmentDescriptionResponse
-
-| Field       | Type   |
-|-------------|--------|
-| description | String |
-
-### ConfigResponse
-
-| Field        | Type   |
-|--------------|--------|
-| defaultSpace | String |
-
-### HealthResponse
-
-| Field  | Type   |
-|--------|--------|
-| status | String |
-
-## Design Guidelines
-
-- Request DTOs: Use `@Data` from Lombok, Jakarta Validation annotations
-- Response DTOs: Use `@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`
-- Use nested static classes for complex response structures
+| Property                       | Environment Variable       |
+|--------------------------------|----------------------------|
+| app.database-url               | APP_DATABASE_URL           |
+| app.attachment-dir             | APP_ATTACHMENT_DIR         |
+| app.confluence-url             | CONFLUENCE_URL             |
+| app.confluence-username        | CONFLUENCE_USERNAME        |
+| app.confluence-api-token       | CONFLUENCE_API_TOKEN       |
+| app.confluence-default-space   | CONFLUENCE_DEFAULT_SPACE   |
+| app.provider                   | CONFLUENCE_PROVIDER        |
+| app.scheduler-interval-seconds | SCHEDULER_INTERVAL_SECONDS |
+| app.cors-origins               | CORS_ORIGINS               |
 
 ## Verification Criteria
 
-- All DTOs compile without errors
-- Validation annotations trigger on invalid input
-- Jackson can serialize/deserialize all DTOs
+- Application starts and creates required directories
+- CORS headers present in API responses
+- Configuration properties load from application.yml and environment
+- SQLite database file created on first run

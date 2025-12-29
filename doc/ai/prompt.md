@@ -6,102 +6,109 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 08: Backend Scheduler and Exception Handler
+Here is Prompt 09: Frontend Setup and Routing
 
 ## Role
 
-You are an expert Java engineer.
+You are an expert front-end engineer.
 
 ## Task
 
-Create the background scheduler for processing queued publications and the global exception handler for consistent error
-responses.
+Set up the Angular 20 frontend with standalone components, routing, and TailwindCSS styling.
 
-## Components to Create
+## Requirements
 
-### 1. PageScheduler
+### Main Entry Point (main.ts)
 
-Package: `com.confluence.publisher.scheduler`
+- Bootstrap AppComponent using `bootstrapApplication`
+- Provide router with routes
+- Provide HttpClient
 
-**Dependencies**: ScheduleService, PublishService, AppProperties
+### Routes (app.routes.ts)
 
-**Scheduled Method**: `processScheduledPosts()`
+| Path         | Component          | Loading     |
+|--------------|--------------------|-------------|
+| `/`          | ComposeComponent   | Lazy loaded |
+| `/schedules` | SchedulesComponent | Lazy loaded |
 
-- Annotate with `@Scheduled(fixedDelayString = "#{@appProperties.schedulerIntervalSeconds * 1000}")`
-- Find all queued schedules where scheduledAt <= now
-- For each schedule:
-    - Try to publish the page via PublishService
-    - On success: update status to "posted"
-    - On failure: update status to "failed" with error message
-- Log results
+### App Component (app.component.ts)
 
-### 2. GlobalExceptionHandler
+A standalone component with inline template containing:
 
-Package: `com.confluence.publisher.exception`
+**Layout Structure**:
 
-Use `@RestControllerAdvice` to handle exceptions globally.
+- Header with app title "Confluence Publisher" and navigation links
+- Main content area with `<router-outlet>`
+- Footer with copyright
 
-**Exception Handlers**:
+**Navigation**:
 
-| Exception                       | Status                                        | Response                                |
-|---------------------------------|-----------------------------------------------|-----------------------------------------|
-| RuntimeException                | 404 if message contains "not found", else 500 | `{"detail": <message>}`                 |
-| MethodArgumentNotValidException | 400                                           | `{"errors": {<field>: <message>, ...}}` |
-| Exception (generic)             | 500                                           | `{"detail": "Internal server error"}`   |
+- Link to "/" labeled "Compose"
+- Link to "/schedules" labeled "Schedules"
+- Use `routerLinkActive` for active state styling
 
-**Behavior**:
+**Styling** (TailwindCSS):
 
-- Log all exceptions
-- Extract field errors from validation exceptions
-- Don't expose internal details for generic exceptions
-- Assume not-found cases throw `RuntimeException` messages containing the phrase "not found" (for example, "Page not
-  found: 123" or "Schedule not found: 5") so they can be mapped to 404
+- Min-height screen, flex column layout
+- Header: white background, border bottom
+- Content: max-width container, centered
+- Footer: border top, small text
 
-## Scheduler Flow
+### Index HTML
+
+- Standard HTML5 doctype
+- Title: "Confluence Publisher"
+- Body with `bg-gray-50` class
+- `<app-root>` element
+
+### Global Styles (styles.css)
+
+- Import Tailwind base, components, utilities
+- Set color-scheme to light
+
+### Environment Files
+
+**environment.ts** (development):
+
+- apiBase: 'http://localhost:8080'
+- production: false
+
+**environment.prod.ts** (production):
+
+- apiBase: 'http://localhost:8080'
+- production: true
+
+### TypeScript Configuration
+
+- Strict mode enabled
+- ES2022 target
+- Bundler module resolution
+- Angular strict templates enabled
+
+## Design Guidelines
+
+- Use standalone components (no NgModules)
+- Use inline templates for simple components
+- Use TailwindCSS utility classes
+- Lazy load page components for code splitting
+
+## Application Layout
 
 ```
-Every N seconds:
-1. Query: SELECT * FROM schedule WHERE status='queued' AND scheduledAt <= NOW
-2. For each schedule:
-   - Call publishService.publishPage(pageId)
-   - Update schedule status and attemptCount
-3. Log success/failure
-```
-
-## Error Response Formats
-
-**Validation Error (400)**:
-
-```json
-{
-  "errors": {
-    "title": "Title is required",
-    "content": "Content is required"
-  }
-}
-```
-
-**Not Found (404)**:
-
-```json
-{
-  "detail": "Page not found: 123"
-}
-```
-
-**Server Error (500)**:
-
-```json
-{
-  "detail": "Internal server error"
-}
+┌─────────────────────────────────────────────┐
+│  Confluence Publisher    [Compose] [Schedules] │
+├─────────────────────────────────────────────┤
+│                                             │
+│            <router-outlet>                  │
+│                                             │
+├─────────────────────────────────────────────┤
+│  © 2024 Confluence Publisher                │
+└─────────────────────────────────────────────┘
 ```
 
 ## Verification Criteria
 
-- Scheduler runs at configured interval
-- Queued schedules processed automatically
-- Failed schedules store error messages
-- Validation errors return field-level messages
-- Not found errors return 404
-- Generic errors don't expose internals
+- App starts with `npm start`
+- Navigation works between pages
+- TailwindCSS classes applied
+- No console errors

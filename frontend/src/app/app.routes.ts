@@ -3,12 +3,11 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/home',
-    pathMatch: 'full'
+    loadComponent: () => import('./pages/compose/compose.component').then(m => m.ComposeComponent)
   },
   {
-    path: 'home',
-    loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent)
+    path: 'schedules',
+    loadComponent: () => import('./pages/schedules/schedules.component').then(m => m.SchedulesComponent)
   }
 ];
 

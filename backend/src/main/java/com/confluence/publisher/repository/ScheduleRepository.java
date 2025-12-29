@@ -14,5 +14,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     
     @Query("SELECT s FROM Schedule s WHERE s.status = 'queued' AND s.scheduledAt <= :now")
     List<Schedule> findQueuedSchedulesBefore(@Param("now") Instant now);
+    
+    List<Schedule> findByStatusAndScheduledAtLessThanEqual(String status, Instant scheduledAt);
 }
 

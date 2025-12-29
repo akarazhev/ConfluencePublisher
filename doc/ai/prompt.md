@@ -6,7 +6,7 @@ Temperature:
 - 0.0–0.3 for repeatable, deterministic code generation. 
 - 0.0–0.1 to follow these prompts and avoid creative deviations.
 
-Here is Prompt 04: Backend Configuration Classes
+Here is Prompt 05: Backend Services
 
 ## Role
 
@@ -14,85 +14,107 @@ You are an expert Java engineer.
 
 ## Task
 
-Create Spring configuration classes for the Confluence Publisher application.
+Create the service layer with business logic for the Confluence Publisher application.
 
 ## Package
 
-`com.confluence.publisher.config`
+`com.confluence.publisher.service`
 
-## Classes to Create
+## Services to Create
 
-### 1. AppProperties
+### 1. PageService
 
-A `@ConfigurationProperties` class with prefix `app` containing:
+**Dependencies**: PageRepository, PageAttachmentRepository, AttachmentRepository
 
-| Property                 | Type         | Default Value                       |
-|--------------------------|--------------|-------------------------------------|
-| appName                  | String       | "confluence-publisher"              |
-| databaseUrl              | String       | "jdbc:sqlite:./data/app.db"         |
-| attachmentDir            | String       | "storage/attachments"               |
-| confluenceUrl            | String       | "https://your-domain.atlassian.net" |
-| confluenceUsername       | String       | ""                                  |
-| confluenceDefaultSpace   | String       | "DEV"                               |
-| confluenceApiToken       | String       | ""                                  |
-| corsOrigins              | List<String> | localhost:4200, 8080, 5173          |
-| provider                 | String       | "confluence-server"                 |
-| schedulerIntervalSeconds | Integer      | 5                                   |
+**Methods**:
 
-Include a setter that can parse comma-separated CORS origins from environment variable.
+- `createPage(title, content, spaceKey, parentPageId, attachmentIds)` → Page
+    - Save the page entity
+    - Create PageAttachment records for each attachment ID with position index
+    - Return the saved page
 
-### 2. WebConfig
+- `getPage(pageId)` → PageResponse
+    - Find page by ID or throw "Page not found" exception
+    - Load associated attachments via PageAttachmentRepository
+    - Build and return PageResponse with attachment info
 
-Implements `WebMvcConfigurer` to configure CORS:
+### 2. AttachmentService
 
-- Apply to `/api/**` paths
-- Allow origins from AppProperties.corsOrigins
-- Allow methods: GET, POST, PUT, DELETE, OPTIONS
-- Allow all headers
-- Allow credentials
+**Dependencies**: AttachmentRepository, AppProperties
 
-### 3. JpaConfig
+**Methods**:
 
-Creates a `DataSource` bean for SQLite:
+- `uploadAttachment(MultipartFile file, description)` → Attachment
+    - Create attachment directory if needed
+    - Generate UUID-based filename preserving original extension
+    - Write file bytes to disk
+    - Create Attachment entity with original filename, content type, size, storage path
+    - Save and return the attachment
 
-- Use `DriverManagerDataSource` with SQLite JDBC driver
-- Read URL from `app.database-url` property
-- Handle both `jdbc:sqlite:` and `jdbc:sqlite:///` URL formats
+### 3. ScheduleService
 
-### 4. DataInitializer
+**Dependencies**: ScheduleRepository
 
-Implements `CommandLineRunner` to:
+**Methods**:
 
-- Create the database directory if it doesn't exist
-- Create the attachment directory if it doesn't exist
-- Log initialization completion
+- `createSchedule(pageId, scheduledAt)` → Schedule
+    - Use current time if scheduledAt is null
+    - Create schedule with status "queued"
 
-### 5. Main Application Class
+- `getSchedule(scheduleId)` → Schedule
+    - Find by ID or throw "Schedule not found"
 
-`ConfluencePublisherApplication` with:
+- `listSchedules(limit)` → List<Schedule>
+    - Return the latest schedules sorted by ID descending, limited by the provided `limit` (for example, 50 for the list
+      endpoint)
 
-- `@SpringBootApplication`
-- `@EnableScheduling` for background job support
-- `@EnableConfigurationProperties(AppProperties.class)` (this registers an `AppProperties` bean with the default name
-  `appProperties`, which can be referenced from `@Scheduled` SpEL expressions)
+- `findQueuedSchedules(now)` → List<Schedule>
+    - Find schedules with status "queued" and scheduledAt <= now
 
-## Configuration Properties Mapping
+- `updateScheduleStatus(schedule, status, error)` → void
+    - Update status, increment attemptCount, set lastError
 
-| Property                       | Environment Variable       |
-|--------------------------------|----------------------------|
-| app.database-url               | APP_DATABASE_URL           |
-| app.attachment-dir             | APP_ATTACHMENT_DIR         |
-| app.confluence-url             | CONFLUENCE_URL             |
-| app.confluence-username        | CONFLUENCE_USERNAME        |
-| app.confluence-api-token       | CONFLUENCE_API_TOKEN       |
-| app.confluence-default-space   | CONFLUENCE_DEFAULT_SPACE   |
-| app.provider                   | CONFLUENCE_PROVIDER        |
-| app.scheduler-interval-seconds | SCHEDULER_INTERVAL_SECONDS |
-| app.cors-origins               | CORS_ORIGINS               |
+### 4. PublishService
+
+**Dependencies**: PageRepository, PageAttachmentRepository, AttachmentRepository, PublishLogRepository, ProviderFactory
+
+**Methods**:
+
+- `publishPage(pageId)` → PublishLog
+    - Find page by ID
+    - Get attachment file paths for the page
+    - Get provider from ProviderFactory
+    - Call provider.publishPage() with page data
+    - Create and save PublishLog with result
+    - Return the publish log
+
+### 5. AiService
+
+**Dependencies**: None (stub implementation)
+
+**Methods**:
+
+- `improveContent(content)` → List<String>
+    - Return stub suggestions: original content, truncated version (first 100 chars + "..."), uppercase version
+    - This is a placeholder for future AI integration
+
+- `generateDescription(description)` → String
+    - If description is null or blank, return "No description provided"
+    - Otherwise return sanitized/truncated description (max 200 chars)
+    - This is a placeholder for future AI integration
+
+## Design Guidelines
+
+- Use `@Service` and `@RequiredArgsConstructor`
+- Use `@Transactional` for write operations
+- Use `@Transactional(readOnly = true)` for read operations
+- Throw `RuntimeException` with messages that include the phrase "not found" for missing resources (for example, "Page
+  not found: " + id or "Schedule not found: " + id) so the global exception handler can map them to 404
+- Use Lombok `@Slf4j` for logging
 
 ## Verification Criteria
 
-- Application starts and creates required directories
-- CORS headers present in API responses
-- Configuration properties load from application.yml and environment
-- SQLite database file created on first run
+- All services compile and can be injected
+- Transactions rollback on errors
+- File uploads saved to configured directory
+- Page-attachment relationships maintained correctly

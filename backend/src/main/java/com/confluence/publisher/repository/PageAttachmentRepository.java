@@ -11,6 +11,8 @@ public interface PageAttachmentRepository extends JpaRepository<PageAttachment, 
     
     List<PageAttachment> findByPageIdOrderByPosition(Long pageId);
     
+    List<PageAttachment> findByPageIdOrderByPositionAsc(Long pageId);
+    
     void deleteByPageId(Long pageId);
 }
 

@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * Factory to select provider based on configuration.
- * This is a minimal stub implementation that will be properly implemented in prompt 06.
- * For now, it returns null and logs a warning.
  */
 @Slf4j
 @Component
@@ -16,14 +14,29 @@ import org.springframework.stereotype.Component;
 public class ProviderFactory {
 
     private final AppProperties appProperties;
+    private final ConfluenceStubProvider confluenceStubProvider;
+    private final ConfluenceServerProvider confluenceServerProvider;
 
     public BaseProvider getProvider() {
         String providerName = appProperties.getProvider();
-        log.warn("ProviderFactory.getProvider() called but providers not yet implemented. " +
-                "Configured provider: {}. This will be implemented in prompt 06.", providerName);
-        // Return null for now - this will cause PublishService to fail, but the structure is correct
-        // This will be properly implemented in prompt 06
-        return null;
+        
+        if (providerName == null || providerName.isBlank()) {
+            log.warn("No provider configured, falling back to stub provider");
+            return confluenceStubProvider;
+        }
+        
+        String normalizedProvider = providerName.toLowerCase().trim();
+        
+        if ("confluence-server".equals(normalizedProvider) || "server".equals(normalizedProvider)) {
+            log.info("Using ConfluenceServerProvider");
+            return confluenceServerProvider;
+        } else if ("confluence-stub".equals(normalizedProvider) || "stub".equals(normalizedProvider)) {
+            log.info("Using ConfluenceStubProvider");
+            return confluenceStubProvider;
+        } else {
+            log.warn("Unknown provider '{}', falling back to stub provider", providerName);
+            return confluenceStubProvider;
+        }
     }
 
     public String getProviderName() {

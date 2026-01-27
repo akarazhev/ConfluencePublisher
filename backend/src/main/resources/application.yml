@@ -2,10 +2,6 @@ spring:
   application:
     name: confluence-publisher
   
-  datasource:
-    url: ${DATABASE_URL:jdbc:sqlite:./data/app.db}
-    driver-class-name: org.sqlite.JDBC
-  
   jpa:
     hibernate:
       ddl-auto: update
@@ -30,21 +26,14 @@ management:
       exposure:
         include: health
 
-confluence:
-  url: ${CONFLUENCE_URL:}
-  username: ${CONFLUENCE_USERNAME:}
-  api-token: ${CONFLUENCE_API_TOKEN:}
-  default-space: ${CONFLUENCE_DEFAULT_SPACE:}
-  provider-type: ${CONFLUENCE_PROVIDER_TYPE:confluence-stub}
-
-storage:
-  attachments-dir: ${ATTACHMENTS_DIR:storage/attachments}
-
-scheduler:
-  interval-seconds: ${SCHEDULER_INTERVAL_SECONDS:60}
-
-cors:
-  allowed-origins:
-    - http://localhost:4200
-    - http://localhost:8080
-    - http://localhost:5173
+app:
+  app-name: ${APP_NAME:confluence-publisher}
+  database-url: ${APP_DATABASE_URL:jdbc:sqlite:./data/app.db}
+  attachment-dir: ${APP_ATTACHMENT_DIR:storage/attachments}
+  confluence-url: ${CONFLUENCE_URL:https://your-domain.atlassian.net}
+  confluence-username: ${CONFLUENCE_USERNAME:}
+  confluence-api-token: ${CONFLUENCE_API_TOKEN:}
+  confluence-default-space: ${CONFLUENCE_DEFAULT_SPACE:DEV}
+  provider: ${CONFLUENCE_PROVIDER:confluence-server}
+  scheduler-interval-seconds: ${SCHEDULER_INTERVAL_SECONDS:5}
+  cors-origins: ${CORS_ORIGINS:http://localhost:4200,http://localhost:8080,http://localhost:5173}

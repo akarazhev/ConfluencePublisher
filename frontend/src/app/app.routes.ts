@@ -7,6 +7,6 @@ export const routes: Routes = [
   },
   {
     path: 'schedules',
-    loadComponent: () => import('./schedules/schedules.component').then(m => m.SchedulesComponent)
+    loadComponent: () => import('./pages/schedules/schedules.component').then(m => m.SchedulesComponent)
   }
 ];

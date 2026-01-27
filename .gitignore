@@ -23,5 +23,36 @@
 hs_err_pid*
 replay_pid*
 
-# Idea
+# IDE
 .idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Application Data
+data/
+storage/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend Build
+frontend/dist/
+frontend/.angular/
+
+# Backend Build
+backend/build/
+backend/.gradle/
+backend/out/
+
+# Environment Variables
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

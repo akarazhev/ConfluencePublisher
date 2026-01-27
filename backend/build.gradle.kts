@@ -2,7 +2,6 @@ plugins {
     java
     id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
-    id("org.lombok") version "1.18.30"
 }
 
 group = "com.confluence"

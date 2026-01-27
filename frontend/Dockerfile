@@ -9,14 +9,11 @@ ENV NG_APP_API_BASE=$NG_APP_API_BASE
 
 # Copy package files
 COPY package.json ./
-COPY package-lock.json* ./
 
-# Install dependencies (use npm install if package-lock.json doesn't exist)
-RUN if [ -f package-lock.json ]; then \
-      npm ci; \
-    else \
-      npm install; \
-    fi
+# Install dependencies
+# Note: If package-lock.json exists in the repository, add it to .dockerignore exceptions
+# and add a separate COPY package-lock.json ./ line above
+RUN npm install
 
 # Copy source code
 COPY . .

@@ -23,5 +23,36 @@
 hs_err_pid*
 replay_pid*
 
-# Idea
+# IDE
 .idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Database
+data/
+
+# Storage
+storage/attachments/
+
+# Backend build artifacts
+backend/build/
+backend/.gradle/
+backend/out/
+backend/*.iml
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/out-tsc/
+frontend/*.iml
+
+# OS
+.DS_Store
+Thumbs.db

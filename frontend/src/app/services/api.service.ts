@@ -119,12 +119,12 @@ export class ApiService {
 
     // Only include spaceKey if provided
     if (spaceKey) {
-      body.spaceKey = spaceKey;
+      body['spaceKey'] = spaceKey;
     }
 
     // Only include parentPageId if provided
     if (parentPageId !== undefined) {
-      body.parentPageId = parentPageId;
+      body['parentPageId'] = parentPageId;
     }
 
     return this.http.post<PageResponse>(this.api('/pages'), body);
@@ -151,7 +151,7 @@ export class ApiService {
   schedulePage(pageId: number, scheduledAt?: string): Observable<Schedule> {
     const body: Record<string, unknown> = { pageId };
     if (scheduledAt) {
-      body.scheduledAt = scheduledAt;
+      body['scheduledAt'] = scheduledAt;
     }
     return this.http.post<Schedule>(this.api('/schedules'), body);
   }
@@ -180,7 +180,7 @@ export class ApiService {
   generateDescription(description?: string): Observable<AttachmentDescriptionResponse> {
     const body: Record<string, unknown> = {};
     if (description) {
-      body.description = description;
+      body['description'] = description;
     }
     return this.http.post<AttachmentDescriptionResponse>(
       this.api('/ai/generate-description'),

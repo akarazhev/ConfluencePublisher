@@ -28,10 +28,4 @@ public interface BaseProvider {
      * @return Status string
      */
     String getStatus(String confluencePageId);
-    
-    /**
-     * Result record for provider operations.
-     */
-    record ProviderResult(String confluencePageId, String message) {
-    }
 }

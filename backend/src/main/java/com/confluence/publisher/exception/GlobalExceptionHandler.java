@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +15,20 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    
+    /**
+     * Handle NoResourceFoundException (e.g., favicon.ico, root path requests).
+     * These are harmless browser requests that don't need to be logged as errors.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException ex) {
+        // Log at debug level only - these are expected for API-only backends
+        log.debug("Static resource not found: {}", ex.getResourcePath());
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("detail", "Resource not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
     
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {

@@ -23,8 +23,8 @@ RUN if [ -n "$NG_APP_API_BASE" ]; then \
       sed -i "s|apiBase: '.*'|apiBase: '$NG_APP_API_BASE'|g" src/environments/environment.prod.ts; \
     fi
 
-# Build application
-RUN npm run build
+# Build application for production
+RUN npm run build -- --configuration production
 
 # Runtime stage
 FROM nginx:alpine
@@ -33,7 +33,15 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built files from dist folder
-COPY --from=build /app/dist/confluence-publisher /usr/share/nginx/html
+# Angular application builder may output to a browser subdirectory, so check both locations
+COPY --from=build /app/dist/confluence-publisher /tmp/dist
+RUN if [ -d /tmp/dist/browser ]; then \
+      cp -r /tmp/dist/browser/* /usr/share/nginx/html/; \
+    else \
+      cp -r /tmp/dist/* /usr/share/nginx/html/; \
+    fi && \
+    rm -rf /tmp/dist && \
+    ls -la /usr/share/nginx/html/
 
 # Expose port
 EXPOSE 80

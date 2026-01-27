@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -56,8 +56,9 @@ export interface ConfigResponse {
   providedIn: 'root'
 })
 export class ApiService {
-  private http = inject(HttpClient);
-  private apiBase = environment.apiBase;
+  private readonly apiBase = environment.apiBase;
+
+  constructor(private http: HttpClient) {}
 
   /**
    * Helper method to construct full API URL
